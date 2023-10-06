@@ -52,6 +52,7 @@ fun processDependencies(config: Config): Map<String, Map<String, Artifact>> {
         .flatMap { it.allDependencies.asSequence() }
         .groupBy { it.id }
         .mapNotNull { (id, dependencies) ->
+            if (id.startsWith("project ")) return@mapNotNull null
             val deps = dependencies.toSet()
             if (deps.isEmpty()) {
                 config.logger.warn("$id: no resolved dependencies in dependency graph")
