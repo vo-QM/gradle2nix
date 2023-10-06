@@ -1,6 +1,7 @@
 package org.nixos.gradle2nix
 
 import java.io.PrintStream
+import kotlin.system.exitProcess
 
 class Logger(
     val out: PrintStream = System.err,
@@ -9,9 +10,9 @@ class Logger(
 
     val log: (String) -> Unit = { if (verbose) out.println(it) }
     val warn: (String) -> Unit = { out.println("Warning: $it")}
-    val error: (String) -> Unit = {
+    val error: (String) -> Nothing = {
         out.println("Error: $it")
-        System.exit(1)
+        exitProcess(1)
     }
 
     operator fun component1() = log

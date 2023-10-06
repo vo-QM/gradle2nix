@@ -1,10 +1,22 @@
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+
 plugins {
-    `embedded-kotlin`
-    kotlin("kapt")
+    id("org.jetbrains.kotlin.jvm")
+    id("org.jetbrains.kotlin.plugin.serialization")
 }
 
 dependencies {
-    api("com.squareup.moshi:moshi:latest.release")
-    kapt("com.squareup.moshi:moshi-kotlin-codegen:latest.release")
-    implementation("net.swiftzer.semver:semver:latest.release")
+    implementation(libs.serialization.json)
+    implementation(libs.semver)
+}
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_1_8
+    targetCompatibility = JavaVersion.VERSION_1_8
+}
+
+kotlin {
+    compilerOptions {
+        jvmTarget.set(JvmTarget.JVM_1_8)
+    }
 }

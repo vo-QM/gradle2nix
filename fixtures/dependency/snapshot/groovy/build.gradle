@@ -3,7 +3,7 @@ plugins {
 }
 
 repositories {
-    maven { url = uri("http://localhost:9999") }
+    maven { url = uri("file:/../../../../") }
 }
 
 dependencies {

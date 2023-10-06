@@ -1,4 +1,4 @@
 plugins {
     `java-library`
-    id("com.example.custom-spotless")
+    id("com.example.apply-plugin-publish")
 }

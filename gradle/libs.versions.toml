@@ -1,0 +1,43 @@
+[versions]
+gradle = "8.3"
+kotlin = "1.9.0" # Current embedded Gradle kotlin version
+ksp = "1.9.0-1.0.13"
+
+[libraries]
+clikt = "com.github.ajalt:clikt:+"
+gradle-dependencyGraph = "org.gradle:github-dependency-graph-gradle-plugin:+"
+gradle-toolingApi = { module = "org.gradle:gradle-tooling-api", version.ref = "gradle" }
+ivy = "org.apache.ivy:ivy:+"
+javalin = "io.javalin:javalin:+"
+junit-jupiter-api = "org.junit.jupiter:junit-jupiter-api:+"
+junit-jupiter-engine = "org.junit.jupiter:junit-jupiter-engine:+"
+junit-jupiter-params = "org.junit.jupiter:junit-jupiter-params:+"
+junit-platformLauncher = "org.junit.platform:junit-platform-launcher:+"
+kotest-runner = "io.kotest:kotest-runner-junit5:+"
+kotest-assertions = "io.kotest:kotest-assertions-core:+"
+maven-repositoryMetadata = "org.apache.maven:maven-repository-metadata:+"
+minutest = "dev.minutest:minutest:+"
+moshi = "com.squareup.moshi:moshi:+"
+moshi-adapters = "com.squareup.moshi:moshi-adapters:+"
+moshi-kotlin = "com.squareup.moshi:moshi-kotlin:+"
+moshi-kotlinCodegen = "com.squareup.moshi:moshi-kotlin-codegen:+"
+okio = "com.squareup.okio:okio:+"
+s3 = "com.amazonaws:aws-java-sdk-s3:+"
+s3mock = "com.adobe.testing:s3mock-junit5:+"
+semver = "net.swiftzer.semver:semver:+"
+serialization-json = "org.jetbrains.kotlinx:kotlinx-serialization-json:+"
+slf4j-api = "org.slf4j:slf4j-api:+"
+slf4j-simple = "org.slf4j:slf4j-simple:+"
+spek-dsl = "org.spekframework.spek2:spek-dsl-jvm:+"
+spek-runner = "org.spekframework.spek2:spek-runner-junit5:+"
+strikt = "io.strikt:strikt-core:+"
+
+[plugins]
+pluginPublish = { id = "com.gradle.plugin-publish", version = "1.2.1" }
+kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
+kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
+ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
+shadow = { id = "com.github.johnrengelman.shadow", version = "8.1.1" }
+stutter = { id = "org.ajoberstar.stutter", version = "0.7.2" }
+
+[bundles]

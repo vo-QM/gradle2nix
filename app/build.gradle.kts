@@ -1,27 +1,28 @@
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
-
 plugins {
-    kotlin("jvm")
-    kotlin("kapt")
+    id("org.jetbrains.kotlin.jvm")
+    id("org.jetbrains.kotlin.plugin.serialization")
     application
 }
 
+configurations {
+    register("share")
+}
+
 dependencies {
-    implementation(project(":model"))
     implementation(kotlin("reflect"))
-    implementation("org.gradle:gradle-tooling-api:${gradle.gradleVersion}")
-    implementation("com.github.ajalt:clikt:latest.release")
-    implementation("org.slf4j:slf4j-api:latest.release")
-    runtimeOnly("org.slf4j:slf4j-simple:latest.release")
-    implementation("com.squareup.moshi:moshi-adapters:latest.release")
-    implementation("com.squareup.moshi:moshi-kotlin:latest.release")
-    kapt("com.squareup.moshi:moshi-kotlin-codegen:latest.release")
-    implementation("com.squareup.okio:okio:latest.release")
+    implementation(project(":model"))
+    implementation(libs.clikt)
+    implementation(libs.gradle.toolingApi)
+    implementation(libs.serialization.json)
+    implementation(libs.slf4j.api)
+    runtimeOnly(libs.slf4j.simple)
+    implementation(libs.okio)
+
+    "share"(project(":plugin", configuration = "shadow"))
 
     testRuntimeOnly(kotlin("reflect"))
-    testImplementation("org.spekframework.spek2:spek-dsl-jvm:latest.release")
-    testRuntimeOnly("org.spekframework.spek2:spek-runner-junit5:latest.release")
-    testImplementation("io.strikt:strikt-core:latest.release")
+    testImplementation(libs.kotest.assertions)
+    testImplementation(libs.kotest.runner)
 }
 
 application {
@@ -29,9 +30,13 @@ application {
     applicationName = "gradle2nix"
     applicationDefaultJvmArgs += "-Dorg.nixos.gradle2nix.share=@APP_HOME@/share"
     applicationDistribution
-        .from(tasks.getByPath(":plugin:shadowJar"), "$rootDir/gradle-env.nix")
+        .from(configurations.named("share"))
         .into("share")
         .rename("plugin.*\\.jar", "plugin.jar")
+}
+
+kotlin {
+    jvmToolchain(11)
 }
 
 sourceSets {
@@ -41,6 +46,8 @@ sourceSets {
         }
     }
 }
+
+val updateGolden = providers.gradleProperty("update-golden")
 
 tasks {
     (run) {
@@ -52,28 +59,32 @@ tasks {
 
     startScripts {
         doLast {
-            unixScript.writeText(unixScript.readText().replace("@APP_HOME@", "\$APP_HOME"))
+            unixScript.writeText(
+                unixScript.readText()
+                    .replace("@APP_HOME@", "\\\"\$APP_HOME\\\"")
+                    .replace(Regex("DEFAULT_JVM_OPTS=\'(.*)\'")) { match ->
+                        "DEFAULT_JVM_OPTS=${match.groupValues[1]}"
+                    }
+            )
             windowsScript.writeText(windowsScript.readText().replace("@APP_HOME@", "%APP_HOME%"))
         }
     }
 
-    test {
+    withType<Test> {
+        notCompatibleWithConfigurationCache("huh?")
         dependsOn(installDist)
         doFirst {
-            systemProperties("org.nixos.gradle2nix.share" to installDist.get().destinationDir.resolve("share"))
+            if (updateGolden.isPresent) {
+                systemProperty("org.nixos.gradle2nix.update-golden", "")
+            }
+            systemProperties(
+                "org.nixos.gradle2nix.share" to installDist.get().destinationDir.resolve("share"),
+                "org.nixos.gradle2nix.m2" to rootDir.resolve("fixtures/repositories/m2").toURI().toString()
+            )
         }
-        useJUnitPlatform {
-            includeEngines("spek2")
-        }
+        useJUnitPlatform()
         testLogging {
             events("passed", "skipped", "failed")
-        }
-    }
-
-    withType<KotlinCompile> {
-        kotlinOptions {
-            jvmTarget = "1.8"
-            freeCompilerArgs = listOf("-Xopt-in=kotlin.RequiresOptIn")
         }
     }
 }

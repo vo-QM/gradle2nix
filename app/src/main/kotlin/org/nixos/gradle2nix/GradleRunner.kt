@@ -13,19 +13,31 @@ fun connect(config: Config): ProjectConnection =
         .forProjectDirectory(config.projectDir)
         .connect()
 
-@Suppress("UnstableApiUsage")
-fun ProjectConnection.getBuildModel(config: Config, path: String): DefaultBuild {
-    return model(Build::class.java).apply {
-        addArguments(
-            "--init-script=$shareDir/init.gradle",
-            "-Porg.nixos.gradle2nix.configurations=${config.configurations.joinToString(",")}",
-            "-Porg.nixos.gradle2nix.subprojects=${config.subprojects.joinToString(",")}"
-        )
-        if (config.gradleArgs != null) addArguments(config.gradleArgs)
-        if (path.isNotEmpty()) addArguments("--project-dir=$path")
-        if (!config.quiet) {
-            setStandardOutput(System.err)
-            setStandardError(System.err)
+fun ProjectConnection.build(
+    config: Config,
+) {
+    newBuild()
+        .apply {
+            if (config.tasks.isNotEmpty()) {
+                forTasks(*config.tasks.toTypedArray())
+            } else {
+                forTasks(RESOLVE_ALL_TASK)
+            }
+            addArguments(config.gradleArgs)
+            addArguments(
+                "--init-script=${config.appHome}/init.gradle",
+                "--write-verification-metadata", "sha256"
+            )
+            if (config.projectFilter != null) {
+                addArguments("-D${PARAM_INCLUDE_PROJECTS}")
+            }
+            if (config.configurationFilter != null) {
+                addArguments("-D${PARAM_INCLUDE_CONFIGURATIONS}")
+            }
+            if (config.logger.verbose) {
+                setStandardOutput(System.err)
+                setStandardError(System.err)
+            }
         }
-    }.get().let { DefaultBuild(it) }
+        .run()
 }

@@ -3,10 +3,9 @@ plugins {
 }
 
 repositories {
-    jcenter()
     gradlePluginPortal()
 }
 
 dependencies {
-    implementation("com.diffplug.spotless:spotless-plugin-gradle:3.28.1")
+    implementation("com.gradle.publish:plugin-publish-plugin:1.2.1")
 }

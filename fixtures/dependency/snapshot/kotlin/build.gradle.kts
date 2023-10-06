@@ -1,9 +1,10 @@
+
 plugins {
     java
 }
 
 repositories {
-    maven { url = uri("http://localhost:9999") }
+    maven { url = uri(System.getProperty("org.nixos.gradle2nix.m2")) }
 }
 
 dependencies {
