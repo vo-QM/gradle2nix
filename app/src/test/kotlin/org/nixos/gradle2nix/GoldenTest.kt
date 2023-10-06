@@ -26,7 +26,8 @@ class GoldenTest : FunSpec({
     context("plugin") {
         golden("plugin/resolves-from-default-repo")
     }
-    context("s3") {
+    // FIXME Need s3mock or similar to generate golden data.
+    xcontext("s3") {
         golden("s3/maven")
         golden("s3/maven-snapshot")
     }

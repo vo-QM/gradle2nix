@@ -1,6 +1,8 @@
 package org.nixos.gradle2nix
 
 import java.io.File
+import java.io.FileFilter
+import java.net.URI
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.decodeFromStream
@@ -66,6 +68,7 @@ fun processDependencies(config: Config): Map<String, Map<String, Artifact>> {
             )
             val metadata = verifier.verificationMetadata[componentId]
                 ?: verifyComponentFilesInCache(config, componentId)
+                ?: verifyComponentFilesInTestRepository(config, componentId)
             if (metadata == null) {
                 config.logger.warn("$id: not present in metadata or cache; skipping")
                 return@mapNotNull null
@@ -117,13 +120,33 @@ private fun verifyComponentFilesInCache(
     if (!cacheDir.exists()) {
         return null
     }
-    val verifications = cacheDir.walkBottomUp().filter { it.isFile }.map { f ->
+    val verifications = cacheDir.walk().filter { it.isFile }.map { f ->
         ArtifactVerificationMetadata(
             f.name,
             listOf(Checksum(ChecksumKind.sha256, f.sha256()))
         )
     }
     config.logger.log("$component: obtained artifact hashes from Gradle cache.")
+    return ComponentVerificationMetadata(component, verifications.toList())
+}
+
+private fun verifyComponentFilesInTestRepository(
+    config: Config,
+    component: ModuleComponentIdentifier
+): ComponentVerificationMetadata? {
+    if (m2 == null) return null
+    val dir = File(URI.create(m2)).resolve("${component.group.replace(".", "/")}/${component.module}/${component.version}")
+    if (!dir.exists()) {
+        config.logger.log("$component: not found in m2 repository; tried $dir")
+        return null
+    }
+    val verifications = dir.walk().filter { it.isFile && it.name.startsWith(component.module) }.map { f ->
+        ArtifactVerificationMetadata(
+            f.name,
+            listOf(Checksum(ChecksumKind.sha256, f.sha256()))
+        )
+    }
+    config.logger.log("$component: obtained artifact hashes from test Maven repository.")
     return ComponentVerificationMetadata(component, verifications.toList())
 }
 
