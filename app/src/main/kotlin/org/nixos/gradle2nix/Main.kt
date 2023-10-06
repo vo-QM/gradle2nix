@@ -133,6 +133,8 @@ class Gradle2Nix : CliktCommand(
                     metadata.delete()
                     backup.renameTo(metadata)
                 })
+            } else {
+                metadata.deleteOnExit()
             }
         }
 

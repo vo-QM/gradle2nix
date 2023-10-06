@@ -7,7 +7,6 @@ plugins {
 
 dependencies {
     implementation(libs.serialization.json)
-    implementation(libs.semver)
 }
 
 java {

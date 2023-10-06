@@ -8,6 +8,7 @@ import org.gradle.util.GradleVersion
 import org.nixos.gradle2nix.dependencygraph.extractor.DependencyExtractor
 import org.nixos.gradle2nix.dependencygraph.extractor.DependencyExtractorBuildService
 import org.nixos.gradle2nix.dependencygraph.extractor.LegacyDependencyExtractor
+import org.nixos.gradle2nix.dependencygraph.util.buildDirCompat
 import org.nixos.gradle2nix.dependencygraph.util.service
 
 abstract class AbstractDependencyExtractorPlugin : Plugin<Gradle> {
@@ -35,7 +36,7 @@ abstract class AbstractDependencyExtractorPlugin : Plugin<Gradle> {
         gradle.rootProject { project ->
             dependencyExtractorProvider
                 .get()
-                .rootProjectBuildDirectory = project.buildDir
+                .rootProjectBuildDirectory = project.buildDirCompat
         }
 
         // Register the service to listen for Build Events
