@@ -23,6 +23,9 @@ fun ProjectConnection.build(
             } else {
                 forTasks(RESOLVE_ALL_TASK)
             }
+            if (config.gradleJdk != null) {
+                setJavaHome(config.gradleJdk)
+            }
             addArguments(config.gradleArgs)
             addArguments(
                 "--init-script=${config.appHome}/init.gradle",

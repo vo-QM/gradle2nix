@@ -20,6 +20,7 @@ data class Config(
     val appHome: File,
     val gradleHome: File,
     val gradleVersion: String?,
+    val gradleJdk: File?,
     val gradleArgs: List<String>,
     val projectFilter: String?,
     val configurationFilter: String?,
@@ -42,6 +43,12 @@ class Gradle2Nix : CliktCommand(
         metavar = "VERSION",
         help = "Use a specific Gradle version"
     )
+
+    private val gradleJdk: File? by option(
+        "--gradle-jdk", "-j",
+        metavar = "DIR",
+        help = "JDK home directory to use for launching Gradle (default: ${System.getProperty("java.home")})"
+    ).file(canBeFile = false, canBeDir = true)
 
     private val projectFilter: String? by option(
         "--projects", "-p",
@@ -115,6 +122,7 @@ class Gradle2Nix : CliktCommand(
             File(appHome),
             gradleHome,
             gradleVersion,
+            gradleJdk,
             gradleArgs,
             projectFilter,
             configurationFilter,
