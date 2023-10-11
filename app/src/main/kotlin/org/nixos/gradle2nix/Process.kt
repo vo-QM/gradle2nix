@@ -1,9 +1,12 @@
 package org.nixos.gradle2nix
 
+import org.nixos.gradle2nix.metadata.Artifact as ArtifactMetadata
 import java.io.File
-import java.io.FileFilter
+import java.io.IOException
 import java.net.URI
+import java.net.URL
 import kotlinx.serialization.ExperimentalSerializationApi
+import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.decodeFromStream
 import okio.ByteString.Companion.decodeHex
@@ -11,16 +14,19 @@ import okio.HashingSource
 import okio.blackholeSink
 import okio.buffer
 import okio.source
-import org.nixos.gradle2nix.dependency.ModuleComponentIdentifier
 import org.nixos.gradle2nix.dependencygraph.model.DependencyCoordinates
 import org.nixos.gradle2nix.dependencygraph.model.Repository
 import org.nixos.gradle2nix.dependencygraph.model.ResolvedConfiguration
-import org.nixos.gradle2nix.metadata.ArtifactVerificationMetadata
 import org.nixos.gradle2nix.metadata.Checksum
-import org.nixos.gradle2nix.metadata.ChecksumKind
-import org.nixos.gradle2nix.metadata.ComponentVerificationMetadata
-import org.nixos.gradle2nix.metadata.DependencyVerificationsXmlReader
-import org.nixos.gradle2nix.metadata.DependencyVerifier
+import org.nixos.gradle2nix.metadata.Component
+import org.nixos.gradle2nix.metadata.Md5
+import org.nixos.gradle2nix.metadata.Sha1
+import org.nixos.gradle2nix.metadata.Sha256
+import org.nixos.gradle2nix.metadata.Sha512
+import org.nixos.gradle2nix.metadata.VerificationMetadata
+import org.nixos.gradle2nix.metadata.parseVerificationMetadata
+import org.nixos.gradle2nix.module.GradleModule
+import org.nixos.gradle2nix.module.Variant
 
 // Local Maven repository for testing
 private val m2 = System.getProperty("org.nixos.gradle2nix.m2")
@@ -31,7 +37,11 @@ private fun shouldSkipRepository(repository: Repository): Boolean {
 }
 
 fun processDependencies(config: Config): Map<String, Map<String, Artifact>> {
-    val verifier = readVerificationMetadata(config)
+    val verificationMetadata = readVerificationMetadata(config)
+    val verificationComponents = verificationMetadata?.components?.associateBy {
+        DependencyCoordinates(it.group, it.name, it.version)
+    } ?: emptyMap()
+    val moduleCache = mutableMapOf<DependencyCoordinates, GradleModule?>()
     val configurations = readDependencyGraph(config)
 
     val repositories = configurations
@@ -61,15 +71,10 @@ fun processDependencies(config: Config): Map<String, Map<String, Artifact>> {
                 return@mapNotNull null
             }
             val coordinates = deps.first().coordinates
-            val componentId = ModuleComponentIdentifier(
-                coordinates.group,
-                coordinates.module,
-                coordinates.version
-            )
-            val metadata = verifier.verificationMetadata[componentId]
-                ?: verifyComponentFilesInCache(config, componentId)
-                ?: verifyComponentFilesInTestRepository(config, componentId)
-            if (metadata == null) {
+            val component = verificationComponents[coordinates]
+                ?: verifyComponentFilesInCache(config, coordinates)
+                ?: verifyComponentFilesInTestRepository(config, coordinates)
+            if (component == null) {
                 config.logger.warn("$id: not present in metadata or cache; skipping")
                 return@mapNotNull null
             }
@@ -85,23 +90,25 @@ fun processDependencies(config: Config): Map<String, Map<String, Artifact>> {
                 return@mapNotNull null
             }
 
-            id to metadata.artifactVerifications.associate { meta ->
-                meta.artifactName to Artifact(
+            val gradleModule = moduleCache.getOrPut(coordinates) {
+                maybeGetGradleModule(config.logger, coordinates, repos)
+            }
+
+            id to component.artifacts.associate { meta ->
+                meta.name to Artifact(
                     urls = repos
-                        .flatMap { repository -> artifactUrls(coordinates, meta, repository) }
+                        .flatMap { repository -> artifactUrls(coordinates, meta.name, repository, gradleModule) }
                         .distinct(),
-                    hash = meta.checksums.maxBy { c -> c.kind.ordinal }.toSri()
+                    hash = meta.checksums.first().toSri()
                 )
             }
         }
+        .sortedBy { it.first }
         .toMap()
 }
 
-private fun readVerificationMetadata(config: Config): DependencyVerifier {
-    return config.projectDir.resolve("gradle/verification-metadata.xml")
-        .inputStream()
-        .buffered()
-        .use { input -> DependencyVerificationsXmlReader.readFromXml(input) }
+private fun readVerificationMetadata(config: Config): VerificationMetadata? {
+    return parseVerificationMetadata(config.logger, config.projectDir.resolve("gradle/verification-metadata.xml"))
 }
 
 @OptIn(ExperimentalSerializationApi::class)
@@ -114,40 +121,58 @@ private fun readDependencyGraph(config: Config): List<ResolvedConfiguration> {
 
 private fun verifyComponentFilesInCache(
     config: Config,
-    component: ModuleComponentIdentifier
-): ComponentVerificationMetadata? {
-    val cacheDir = config.gradleHome.resolve("caches/modules-2/files-2.1/${component.group}/${component.module}/${component.version}")
+    coordinates: DependencyCoordinates,
+): Component? {
+    val cacheDir = with(coordinates) { config.gradleHome.resolve("caches/modules-2/files-2.1/$group/$module/$version") }
     if (!cacheDir.exists()) {
         return null
     }
     val verifications = cacheDir.walk().filter { it.isFile }.map { f ->
-        ArtifactVerificationMetadata(
-            f.name,
-            listOf(Checksum(ChecksumKind.sha256, f.sha256()))
-        )
+        ArtifactMetadata(f.name, sha256 = Sha256(f.sha256()))
     }
-    config.logger.log("$component: obtained artifact hashes from Gradle cache.")
-    return ComponentVerificationMetadata(component, verifications.toList())
+    config.logger.log("$coordinates: obtained artifact hashes from Gradle cache.")
+    return Component(coordinates, verifications.toList())
 }
 
 private fun verifyComponentFilesInTestRepository(
     config: Config,
-    component: ModuleComponentIdentifier
-): ComponentVerificationMetadata? {
+    coordinates: DependencyCoordinates
+): Component? {
     if (m2 == null) return null
-    val dir = File(URI.create(m2)).resolve("${component.group.replace(".", "/")}/${component.module}/${component.version}")
+    val dir = with(coordinates) {
+        File(URI.create(m2)).resolve("${group.replace(".", "/")}/$module/$version")
+    }
     if (!dir.exists()) {
-        config.logger.log("$component: not found in m2 repository; tried $dir")
+        config.logger.log("$coordinates: not found in m2 repository; tried $dir")
         return null
     }
-    val verifications = dir.walk().filter { it.isFile && it.name.startsWith(component.module) }.map { f ->
-        ArtifactVerificationMetadata(
+    val verifications = dir.walk().filter { it.isFile && it.name.startsWith(coordinates.module) }.map { f ->
+        ArtifactMetadata(
             f.name,
-            listOf(Checksum(ChecksumKind.sha256, f.sha256()))
+            sha256 = Sha256(f.sha256())
         )
     }
-    config.logger.log("$component: obtained artifact hashes from test Maven repository.")
-    return ComponentVerificationMetadata(component, verifications.toList())
+    config.logger.log("$coordinates: obtained artifact hashes from test Maven repository.")
+    return Component(coordinates, verifications.toList())
+}
+
+@OptIn(ExperimentalSerializationApi::class)
+private fun maybeGetGradleModule(logger: Logger, coordinates: DependencyCoordinates, repos: List<Repository>): GradleModule? {
+    val filename = with(coordinates) { "$module-$version.module" }
+
+    for (url in repos.flatMap { artifactUrls(coordinates, filename, it, null)}) {
+        try {
+            return URL(url).openStream().buffered().use { input ->
+                JsonFormat.decodeFromStream(input)
+            }
+        } catch (e: SerializationException) {
+            logger.error("$coordinates: failed to parse Gradle module metadata ($url)", e)
+        } catch (e: IOException) {
+            // Pass
+        }
+    }
+
+    return null
 }
 
 private fun File.sha256(): String {
@@ -158,26 +183,34 @@ private fun File.sha256(): String {
 
 private fun Checksum.toSri(): String {
     val hash = value.decodeHex().base64()
-    return when (kind) {
-        ChecksumKind.md5 -> "md5-$hash"
-        ChecksumKind.sha1 -> "sha1-$hash"
-        ChecksumKind.sha256 -> "sha256-$hash"
-        ChecksumKind.sha512 -> "sha512-$hash"
+    return when (this) {
+        is Md5 -> "md5-$hash"
+        is Sha1 -> "sha1-$hash"
+        is Sha256 -> "sha256-$hash"
+        is Sha512 -> "sha512-$hash"
     }
 }
 
 private fun artifactUrls(
     coordinates: DependencyCoordinates,
-    metadata: ArtifactVerificationMetadata,
-    repository: Repository
+    filename: String,
+    repository: Repository,
+    module: GradleModule?
 ): List<String> {
     val groupAsPath = coordinates.group.replace(".", "/")
+
+    val repoFilename = module?.let { m ->
+        m.variants
+            .asSequence()
+            .flatMap(Variant::files)
+            .find { it.name == filename }
+    }?.url ?: filename
 
     val attributes = mutableMapOf(
         "organisation" to if (repository.m2Compatible) groupAsPath else coordinates.group,
         "module" to coordinates.module,
         "revision" to coordinates.version,
-    ) + fileAttributes(metadata.artifactName, coordinates.version)
+    ) + fileAttributes(repoFilename, coordinates.version)
 
     val resources = when (attributes["ext"]) {
         "pom" -> if ("mavenPom" in repository.metadataSources) repository.metadataResources else repository.artifactResources

@@ -30,7 +30,8 @@ data class Config(
 )
 
 @OptIn(ExperimentalSerializationApi::class)
-private val JsonFormat = Json {
+val JsonFormat = Json {
+    ignoreUnknownKeys = true
     prettyPrint = true
     prettyPrintIndent = "  "
 }
@@ -106,9 +107,6 @@ class Gradle2Nix : CliktCommand(
         }
     }
 
-    // Visible for testing
-    lateinit var config: Config
-
     @OptIn(ExperimentalSerializationApi::class)
     override fun run() {
         val appHome = System.getProperty("org.nixos.gradle2nix.share")
@@ -118,7 +116,7 @@ class Gradle2Nix : CliktCommand(
         val gradleHome = System.getenv("GRADLE_USER_HOME")?.let(::File) ?: File("${System.getProperty("user.home")}/.gradle")
         val logger = Logger(verbose = !quiet)
 
-        config = Config(
+        val config = Config(
             File(appHome),
             gradleHome,
             gradleVersion,
@@ -130,8 +128,6 @@ class Gradle2Nix : CliktCommand(
             tasks,
             logger
         )
-
-        val (log, _, error) = logger
 
         val metadata = File("$projectDir/gradle/verification-metadata.xml")
         if (metadata.exists()) {
@@ -158,7 +154,7 @@ class Gradle2Nix : CliktCommand(
 
         val outDir = outDir ?: projectDir
         val json = outDir.resolve("$envFile.json")
-        log("Writing environment to $json")
+        logger.log("Writing environment to $json")
         json.outputStream().buffered().use { output ->
             JsonFormat.encodeToStream(dependencies, output)
         }

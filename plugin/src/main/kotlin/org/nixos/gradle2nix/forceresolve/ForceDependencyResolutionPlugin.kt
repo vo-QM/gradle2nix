@@ -1,4 +1,4 @@
-package org.nixos.gradle2nix
+package org.nixos.gradle2nix.forceresolve
 
 import org.gradle.api.Plugin
 import org.gradle.api.Project
@@ -6,8 +6,8 @@ import org.gradle.api.Task
 import org.gradle.api.invocation.Gradle
 import org.gradle.api.tasks.TaskProvider
 import org.gradle.util.GradleVersion
-import org.nixos.gradle2nix.forceresolve.LegacyResolveProjectDependenciesTask
-import org.nixos.gradle2nix.forceresolve.ResolveProjectDependenciesTask
+import org.nixos.gradle2nix.RESOLVE_ALL_TASK
+import org.nixos.gradle2nix.RESOLVE_PROJECT_TASK
 
 // TODO: Rename these
 

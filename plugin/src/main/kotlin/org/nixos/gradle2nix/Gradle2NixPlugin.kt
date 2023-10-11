@@ -5,6 +5,7 @@ package org.nixos.gradle2nix
 import org.gradle.api.Plugin
 import org.gradle.api.invocation.Gradle
 import org.nixos.gradle2nix.dependencygraph.AbstractDependencyExtractorPlugin
+import org.nixos.gradle2nix.forceresolve.ForceDependencyResolutionPlugin
 
 @Suppress("unused")
 class Gradle2NixPlugin : Plugin<Gradle> {

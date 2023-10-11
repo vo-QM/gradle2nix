@@ -1,6 +1,4 @@
-import com.github.jengelman.gradle.plugins.shadow.relocation.SimpleRelocator
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
-import org.jetbrains.kotlin.gradle.utils.extendsFrom
 
 plugins {
     id("org.jetbrains.kotlin.jvm")

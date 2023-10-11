@@ -38,6 +38,12 @@ private val json = Json {
     prettyPrintIndent = "  "
 }
 
+val testLogger = Logger(verbose = true, stacktrace = true)
+
+fun fixture(path: String): File {
+    return Paths.get("../fixtures", path).toFile()
+}
+
 @OptIn(ExperimentalKotest::class, ExperimentalSerializationApi::class, KotestInternal::class)
 suspend fun TestScope.fixture(
     project: String,

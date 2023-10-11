@@ -1,6 +1,6 @@
 [versions]
 gradle = "8.3"
-kotlin = "1.9.0" # Current embedded Gradle kotlin version
+kotlin = "1.9.20-Beta2"
 
 [libraries]
 clikt = "com.github.ajalt:clikt:+"
@@ -15,6 +15,7 @@ okio = "com.squareup.okio:okio:+"
 serialization-json = "org.jetbrains.kotlinx:kotlinx-serialization-json:+"
 slf4j-api = "org.slf4j:slf4j-api:+"
 slf4j-simple = "org.slf4j:slf4j-simple:+"
+xmlutil = "io.github.pdvrieze.xmlutil:serialization-jvm:+"
 
 [plugins]
 pluginPublish = { id = "com.gradle.plugin-publish", version = "1.2.1" }
