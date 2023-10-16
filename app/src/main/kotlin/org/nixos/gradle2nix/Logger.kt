@@ -9,6 +9,14 @@ class Logger(
     val stacktrace: Boolean = false
 ) {
 
+    fun debug(message: String, error: Throwable? = null) {
+        if (!stacktrace) return
+        out.println(message)
+        if (error == null) return
+        error.message?.let { println("  Cause: $it") }
+        error.printStackTrace(out)
+    }
+
     fun log(message: String, error: Throwable? = null) {
         if (!verbose) return
         out.println(message)

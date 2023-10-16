@@ -9,7 +9,9 @@ import nl.adaptivity.xmlutil.serialization.XmlChildrenName
 import nl.adaptivity.xmlutil.serialization.XmlElement
 import nl.adaptivity.xmlutil.serialization.XmlSerialName
 import org.nixos.gradle2nix.Logger
-import org.nixos.gradle2nix.dependencygraph.model.DependencyCoordinates
+import org.nixos.gradle2nix.DependencyCoordinates
+import org.nixos.gradle2nix.env.ModuleVersionId
+import org.nixos.gradle2nix.env.Version
 
 sealed interface Coordinates {
     val group: String?
@@ -103,13 +105,13 @@ data class Artifact(
 data class Component(
     val group: String,
     val name: String,
-    val version: String,
+    val version: Version,
     val artifacts: List<Artifact> = emptyList(),
 ) {
-    constructor(coordinates: DependencyCoordinates, artifacts: List<Artifact>) : this(
-        coordinates.group,
-        coordinates.module,
-        coordinates.version,
+    constructor(id: ModuleVersionId, artifacts: List<Artifact>) : this(
+        id.group,
+        id.name,
+        id.version,
         artifacts
     )
 }

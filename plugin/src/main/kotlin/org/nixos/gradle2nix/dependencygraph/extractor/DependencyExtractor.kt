@@ -20,7 +20,7 @@ import org.nixos.gradle2nix.PARAM_INCLUDE_CONFIGURATIONS
 import org.nixos.gradle2nix.PARAM_INCLUDE_PROJECTS
 import org.nixos.gradle2nix.PARAM_REPORT_DIR
 import org.nixos.gradle2nix.dependencygraph.DependencyGraphRenderer
-import org.nixos.gradle2nix.dependencygraph.model.DependencyCoordinates
+import org.nixos.gradle2nix.DependencyCoordinates
 import org.nixos.gradle2nix.dependencygraph.model.DependencySource
 import org.nixos.gradle2nix.dependencygraph.model.Repository
 import org.nixos.gradle2nix.dependencygraph.model.ResolvedConfiguration

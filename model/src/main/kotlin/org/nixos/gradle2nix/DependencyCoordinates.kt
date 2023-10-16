@@ -1,4 +1,4 @@
-package org.nixos.gradle2nix.dependencygraph.model
+package org.nixos.gradle2nix
 
 import kotlinx.serialization.Serializable
 

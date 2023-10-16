@@ -74,6 +74,9 @@ class Gradle2Nix : CliktCommand(
         help = "Prefix for environment files (.json and .nix)")
         .default("gradle-env")
 
+    private val debug: Boolean by option("--debug", help = "Enable debug logging")
+        .flag(default = false)
+
     private val quiet: Boolean by option("--quiet", "-q", help = "Disable logging")
         .flag(default = false)
 
@@ -114,7 +117,7 @@ class Gradle2Nix : CliktCommand(
             System.err.println("Error: could not locate the /share directory in the gradle2nix installation")
         }
         val gradleHome = System.getenv("GRADLE_USER_HOME")?.let(::File) ?: File("${System.getProperty("user.home")}/.gradle")
-        val logger = Logger(verbose = !quiet)
+        val logger = Logger(verbose = !quiet, stacktrace = debug)
 
         val config = Config(
             File(appHome),
@@ -146,17 +149,17 @@ class Gradle2Nix : CliktCommand(
             connection.build(config)
         }
 
-        val dependencies = try {
+        val env = try {
             processDependencies(config)
         } catch (e: Throwable) {
-            error("Dependency parsing failed: ${e.message}")
+            logger.error("Dependency parsing failed", e)
         }
 
         val outDir = outDir ?: projectDir
         val json = outDir.resolve("$envFile.json")
         logger.log("Writing environment to $json")
         json.outputStream().buffered().use { output ->
-            JsonFormat.encodeToStream(dependencies, output)
+            JsonFormat.encodeToStream(env, output)
         }
     }
 }

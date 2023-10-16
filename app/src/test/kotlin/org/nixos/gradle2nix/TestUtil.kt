@@ -5,30 +5,24 @@ import io.kotest.common.ExperimentalKotest
 import io.kotest.common.KotestInternal
 import io.kotest.core.names.TestName
 import io.kotest.core.source.sourceRef
-import io.kotest.core.spec.style.scopes.ContainerScope
-import io.kotest.core.spec.style.scopes.RootScope
 import io.kotest.core.test.NestedTest
 import io.kotest.core.test.TestScope
 import io.kotest.core.test.TestType
-import io.kotest.extensions.system.withEnvironment
 import io.kotest.matchers.equals.beEqual
-import io.kotest.matchers.equals.shouldBeEqual
 import io.kotest.matchers.file.shouldBeAFile
-import io.kotest.matchers.paths.shouldBeAFile
 import io.kotest.matchers.should
 import java.io.File
 import java.io.FileFilter
 import java.nio.file.Files
-import java.nio.file.Path
 import java.nio.file.Paths
-import kotlin.io.path.createTempDirectory
-import kotlin.io.path.inputStream
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.SerializationException
+import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.decodeFromStream
 import kotlinx.serialization.json.encodeToStream
 import okio.use
+import org.nixos.gradle2nix.env.Env
 
 private val app = Gradle2Nix()
 
@@ -48,7 +42,7 @@ fun fixture(path: String): File {
 suspend fun TestScope.fixture(
     project: String,
     vararg args: String,
-    test: suspend TestScope.(Map<String, Map<String, Artifact>>) -> Unit
+    test: suspend TestScope.(Env) -> Unit
 ) {
     val tmp = Paths.get("build/tmp/gradle2nix").apply { toFile().mkdirs() }
     val baseDir = Paths.get("../fixtures", project).toFile()
@@ -82,7 +76,7 @@ suspend fun TestScope.fixture(
                 app.main(listOf("-d", tempDir.toString()) + args.withM2())
                 val file = tempDir.resolve("${app.envFile}.json")
                 file.shouldBeAFile()
-                val env: Map<String, Map<String, Artifact>> = file.inputStream().buffered().use { input ->
+                val env: Env = file.inputStream().buffered().use { input ->
                     Json.decodeFromStream(input)
                 }
                 test(env)
@@ -110,14 +104,12 @@ suspend fun TestScope.golden(
             if (!goldenFile.exists()) {
                 fail("Golden file '$filename' doesn't exist. Run with --update-golden to generate.")
             }
-            val goldenData: Map<String, Map<String, Artifact>> = try {
-                goldenFile.inputStream().buffered().use { input ->
-                    json.decodeFromStream(input)
-                }
+            val goldenData = try {
+                goldenFile.readText()
             } catch (e: SerializationException) {
                 fail("Failed to load golden data from '$filename'. Run with --update-golden to regenerate.")
             }
-            env should beEqual(goldenData)
+            json.encodeToString(env) should beEqual(goldenData)
         }
     }
 }

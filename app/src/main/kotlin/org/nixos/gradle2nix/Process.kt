@@ -14,9 +14,16 @@ import okio.HashingSource
 import okio.blackholeSink
 import okio.buffer
 import okio.source
-import org.nixos.gradle2nix.dependencygraph.model.DependencyCoordinates
 import org.nixos.gradle2nix.dependencygraph.model.Repository
 import org.nixos.gradle2nix.dependencygraph.model.ResolvedConfiguration
+import org.nixos.gradle2nix.dependencygraph.model.ResolvedDependency
+import org.nixos.gradle2nix.env.ArtifactFile
+import org.nixos.gradle2nix.env.ArtifactSet
+import org.nixos.gradle2nix.env.Env
+import org.nixos.gradle2nix.env.Module
+import org.nixos.gradle2nix.env.ModuleId
+import org.nixos.gradle2nix.env.ModuleVersionId
+import org.nixos.gradle2nix.env.Version
 import org.nixos.gradle2nix.metadata.Checksum
 import org.nixos.gradle2nix.metadata.Component
 import org.nixos.gradle2nix.metadata.Md5
@@ -36,12 +43,12 @@ private fun shouldSkipRepository(repository: Repository): Boolean {
             repository.metadataResources.all { it.startsWith("file:") && (m2 == null || !it.startsWith(m2)) }
 }
 
-fun processDependencies(config: Config): Map<String, Map<String, Artifact>> {
+fun processDependencies(config: Config): Env {
     val verificationMetadata = readVerificationMetadata(config)
     val verificationComponents = verificationMetadata?.components?.associateBy {
-        DependencyCoordinates(it.group, it.name, it.version)
+        ModuleVersionId(ModuleId(it.group, it.name), it.version)
     } ?: emptyMap()
-    val moduleCache = mutableMapOf<DependencyCoordinates, GradleModule?>()
+    val moduleCache = mutableMapOf<ModuleVersionId, GradleModule?>()
     val configurations = readDependencyGraph(config)
 
     val repositories = configurations
@@ -57,54 +64,53 @@ fun processDependencies(config: Config): Map<String, Map<String, Artifact>> {
         }
     if (repositories.isEmpty()) {
         config.logger.warn("no repositories found in any configuration")
-        return emptyMap()
+        return Env(emptyMap())
     }
+    config.logger.debug("Repositories:\n  ${repositories.values.joinToString("\n  ")}")
 
-    return configurations.asSequence()
+    val modules = configurations.asSequence()
         .flatMap { it.allDependencies.asSequence() }
-        .groupBy { it.id }
-        .mapNotNull { (id, dependencies) ->
-            if (id.startsWith("project ")) return@mapNotNull null
-            val deps = dependencies.toSet()
-            if (deps.isEmpty()) {
-                config.logger.warn("$id: no resolved dependencies in dependency graph")
-                return@mapNotNull null
-            }
-            val coordinates = deps.first().coordinates
-            val component = verificationComponents[coordinates]
-                ?: verifyComponentFilesInCache(config, coordinates)
-                ?: verifyComponentFilesInTestRepository(config, coordinates)
-            if (component == null) {
-                config.logger.warn("$id: not present in metadata or cache; skipping")
-                return@mapNotNull null
-            }
-
-            val repoIds = dependencies.mapNotNull { it.repository }
-            if (repoIds.isEmpty()) {
-                config.logger.warn("$id: no repository ids in dependency graph; skipping")
-                return@mapNotNull null
-            }
-            val repos = repoIds.mapNotNull(repositories::get)
-            if (repos.isEmpty()) {
-                config.logger.warn("$id: no repositories found for repository ids $repoIds; skipping")
-                return@mapNotNull null
-            }
-
-            val gradleModule = moduleCache.getOrPut(coordinates) {
-                maybeGetGradleModule(config.logger, coordinates, repos)
-            }
-
-            id to component.artifacts.associate { meta ->
-                meta.name to Artifact(
-                    urls = repos
-                        .flatMap { repository -> artifactUrls(coordinates, meta.name, repository, gradleModule) }
-                        .distinct(),
-                    hash = meta.checksums.first().toSri()
-                )
-            }
+        .filterNot { it.id.startsWith("project ") || it.repository == null || it.repository !in repositories }
+        .groupBy { ModuleId(it.coordinates.group, it.coordinates.module) }
+        .mapValues { (id, deps) ->
+            val versions = deps.groupBy { Version(it.coordinates.version) }
+                .mapValues { (version, deps) ->
+                    val componentId = ModuleVersionId(id, version)
+                    val dep = MergedDependency(
+                        id = componentId,
+                        repositories = deps.mapNotNull { repositories[it.repository] }
+                    )
+                    val component = verificationComponents[componentId]
+                        ?: verifyComponentFilesInCache(config, componentId)
+                        ?: verifyComponentFilesInTestRepository(config, componentId)
+                    val gradleModule = moduleCache.getOrPut(componentId) {
+                        maybeGetGradleModule(config.logger, componentId, dep.repositories)
+                    }
+                    ArtifactSet(
+                        needsPomRedirect = repositories.values.any {
+                            "mavenPom" in it.metadataSources &&
+                                    "ignoreGradleMetadataRedirection" !in it.metadataSources
+                        },
+                        needsIvyRedirect = repositories.values.any {
+                            "ivyDescriptor" in it.metadataSources &&
+                                    "ignoreGradleMetadataRedirection" !in it.metadataSources
+                        },
+                        files = (component?.artifacts ?: emptyList()).associate { meta ->
+                            meta.name to ArtifactFile(
+                                urls = dep.repositories
+                                    .flatMap { repository -> artifactUrls(componentId, meta.name, repository, gradleModule) }
+                                    .distinct(),
+                                hash = meta.checksums.first().toSri()
+                            )
+                        }.toSortedMap()
+                    )
+                }
+                .toSortedMap(Version.Comparator.reversed())
+            Module(versions)
         }
-        .sortedBy { it.first }
-        .toMap()
+        .toSortedMap(compareBy(ModuleId::toString))
+
+    return Env(modules)
 }
 
 private fun readVerificationMetadata(config: Config): VerificationMetadata? {
@@ -121,52 +127,55 @@ private fun readDependencyGraph(config: Config): List<ResolvedConfiguration> {
 
 private fun verifyComponentFilesInCache(
     config: Config,
-    coordinates: DependencyCoordinates,
+    id: ModuleVersionId,
 ): Component? {
-    val cacheDir = with(coordinates) { config.gradleHome.resolve("caches/modules-2/files-2.1/$group/$module/$version") }
+    val cacheDir = with(id) { config.gradleHome.resolve("caches/modules-2/files-2.1/$group/$name/$version") }
     if (!cacheDir.exists()) {
         return null
     }
     val verifications = cacheDir.walk().filter { it.isFile }.map { f ->
         ArtifactMetadata(f.name, sha256 = Sha256(f.sha256()))
     }
-    config.logger.log("$coordinates: obtained artifact hashes from Gradle cache.")
-    return Component(coordinates, verifications.toList())
+    config.logger.log("$id: obtained artifact hashes from Gradle cache.")
+    return Component(id, verifications.toList())
 }
 
 private fun verifyComponentFilesInTestRepository(
     config: Config,
-    coordinates: DependencyCoordinates
+    id: ModuleVersionId
 ): Component? {
     if (m2 == null) return null
-    val dir = with(coordinates) {
-        File(URI.create(m2)).resolve("${group.replace(".", "/")}/$module/$version")
+    val dir = with(id) {
+        File(URI.create(m2)).resolve("${group.replace(".", "/")}/$name/$version")
     }
     if (!dir.exists()) {
-        config.logger.log("$coordinates: not found in m2 repository; tried $dir")
+        config.logger.log("$id: not found in m2 repository; tried $dir")
         return null
     }
-    val verifications = dir.walk().filter { it.isFile && it.name.startsWith(coordinates.module) }.map { f ->
+    val verifications = dir.walk().filter { it.isFile && it.name.startsWith(id.name) }.map { f ->
         ArtifactMetadata(
             f.name,
             sha256 = Sha256(f.sha256())
         )
     }
-    config.logger.log("$coordinates: obtained artifact hashes from test Maven repository.")
-    return Component(coordinates, verifications.toList())
+    config.logger.log("$id: obtained artifact hashes from test Maven repository.")
+    return Component(id, verifications.toList())
 }
 
 @OptIn(ExperimentalSerializationApi::class)
-private fun maybeGetGradleModule(logger: Logger, coordinates: DependencyCoordinates, repos: List<Repository>): GradleModule? {
-    val filename = with(coordinates) { "$module-$version.module" }
+private fun maybeGetGradleModule(logger: Logger, id: ModuleVersionId, repos: List<Repository>): GradleModule? {
+    val filename = with(id) { "$name-$version.module" }
+    val reposWithGradleMetadata = repos
+        .filter { "gradleMetadata" in it.metadataSources }
+        .flatMap { artifactUrls(id, filename, it, null)}
 
-    for (url in repos.flatMap { artifactUrls(coordinates, filename, it, null)}) {
+    for (url in reposWithGradleMetadata) {
         try {
             return URL(url).openStream().buffered().use { input ->
                 JsonFormat.decodeFromStream(input)
             }
         } catch (e: SerializationException) {
-            logger.error("$coordinates: failed to parse Gradle module metadata ($url)", e)
+            logger.error("$id: failed to parse Gradle module metadata ($url)", e)
         } catch (e: IOException) {
             // Pass
         }
@@ -192,12 +201,12 @@ private fun Checksum.toSri(): String {
 }
 
 private fun artifactUrls(
-    coordinates: DependencyCoordinates,
+    id: ModuleVersionId,
     filename: String,
     repository: Repository,
     module: GradleModule?
 ): List<String> {
-    val groupAsPath = coordinates.group.replace(".", "/")
+    val groupAsPath = id.group.replace(".", "/")
 
     val repoFilename = module?.let { m ->
         m.variants
@@ -207,10 +216,10 @@ private fun artifactUrls(
     }?.url ?: filename
 
     val attributes = mutableMapOf(
-        "organisation" to if (repository.m2Compatible) groupAsPath else coordinates.group,
-        "module" to coordinates.module,
-        "revision" to coordinates.version,
-    ) + fileAttributes(repoFilename, coordinates.version)
+        "organisation" to if (repository.m2Compatible) groupAsPath else id.group,
+        "module" to id.name,
+        "revision" to id.version.toString(),
+    ) + fileAttributes(repoFilename, id.version)
 
     val resources = when (attributes["ext"]) {
         "pom" -> if ("mavenPom" in repository.metadataSources) repository.metadataResources else repository.artifactResources
@@ -251,7 +260,7 @@ private fun fill(template: String, attributes: Map<String, String>): String {
 }
 
 // Gradle persists artifacts with the Maven artifact pattern, which may not match the repository's pattern.
-private fun fileAttributes(file: String, version: String): Map<String, String> {
+private fun fileAttributes(file: String, version: Version): Map<String, String> {
     val parts = Regex("(.+)-$version(-([^.]+))?(\\.(.+))?").matchEntire(file) ?: return emptyMap()
 
     val (artifact, _, classifier, _, ext) = parts.destructured
@@ -262,3 +271,8 @@ private fun fileAttributes(file: String, version: String): Map<String, String> {
         put("ext", ext)
     }
 }
+
+private data class MergedDependency(
+    val id: ModuleVersionId,
+    val repositories: List<Repository>
+)
