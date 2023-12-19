@@ -1,7 +1,6 @@
-package org.nixos.gradle2nix.dependencygraph.model
+package org.nixos.gradle2nix.model
 
 import kotlinx.serialization.Serializable
-import org.nixos.gradle2nix.DependencyCoordinates
 
 @Serializable
 data class ResolvedDependency(
@@ -10,5 +9,5 @@ data class ResolvedDependency(
     val direct: Boolean,
     val coordinates: DependencyCoordinates,
     val repository: String?,
-    val dependencies: List<String>
+    val dependencies: List<String> = emptyList(),
 )

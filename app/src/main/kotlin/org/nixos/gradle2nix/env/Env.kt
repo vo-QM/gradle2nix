@@ -12,11 +12,7 @@ import kotlinx.serialization.encoding.Encoder
 import org.gradle.internal.impldep.com.google.common.collect.ImmutableMap
 import org.gradle.internal.impldep.com.google.common.primitives.Longs
 
-@Serializable
-@JvmInline
-value class Env(
-    val modules: Map<ModuleId, Module>,
-)
+typealias Env = Map<ModuleId, Module>
 
 @Serializable
 @JvmInline
@@ -25,23 +21,30 @@ value class Module(
 )
 
 @Serializable
-data class ArtifactSet(
-    val needsPomRedirect: Boolean,
-    val needsIvyRedirect: Boolean,
+@JvmInline
+value class ArtifactSet(
     val files: Map<String, ArtifactFile>
 )
 
 @Serializable
-data class ArtifactFile(
+data class ArtifactFile internal constructor(
     val urls: List<String>,
     val hash: String,
-)
+) {
+
+    companion object {
+        operator fun invoke(urls: List<String>, hash: String) = ArtifactFile(urls.sorted(), hash)
+    }
+}
 
 @Serializable(ModuleId.Serializer::class)
 data class ModuleId(
     val group: String,
     val name: String,
-) {
+) : Comparable<ModuleId> {
+
+    override fun compareTo(other: ModuleId): Int =
+        compareValuesBy(this, other, ModuleId::group, ModuleId::name)
 
     override fun toString(): String = "$group:$name"
 
@@ -52,7 +55,7 @@ data class ModuleId(
         )
 
         override fun serialize(encoder: Encoder, value: ModuleId) {
-            encoder.encodeString("${value.name}:${value.group}")
+            encoder.encodeString(value.toString())
         }
 
         override fun deserialize(decoder: Decoder): ModuleId {
@@ -66,20 +69,55 @@ data class ModuleId(
     }
 }
 
+@Serializable(ModuleVersionId.Serializer::class)
 data class ModuleVersionId(
     val moduleId: ModuleId,
     val version: Version
-) {
+) : Comparable<ModuleVersionId> {
+    constructor(group: String, name: String, version: Version) : this(ModuleId(group, name), version)
+
     val group: String get() = moduleId.group
     val name: String get() = moduleId.name
 
-    override fun toString(): String = "$moduleId:$version"
+    override fun compareTo(other: ModuleVersionId): Int =
+        compareValuesBy(
+            this,
+            other,
+            ModuleVersionId::moduleId,
+            ModuleVersionId::version
+        )
+
+
+    override fun toString(): String = "$group:$name:$version"
+
+    internal object Serializer : KSerializer<ModuleVersionId> {
+        override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor(
+            Version::class.qualifiedName!!,
+            PrimitiveKind.STRING
+        )
+
+        override fun serialize(encoder: Encoder, value: ModuleVersionId) {
+            encoder.encodeString(value.toString())
+        }
+
+        override fun deserialize(decoder: Decoder): ModuleVersionId {
+            val encoded = decoder.decodeString()
+            val parts = encoded.split(":")
+            if (parts.size != 3 || parts.any(String::isBlank)) {
+                throw SerializationException("invalid module version id: $encoded")
+            }
+            return ModuleVersionId(
+                moduleId = ModuleId(parts[0], parts[1]),
+                version = Version(parts[3])
+            )
+        }
+    }
 }
 
 @Serializable(Version.Serializer::class)
 class Version(val source: String, val parts: List<String>, base: Version?) : Comparable<Version> {
 
-    val base: Version
+    private val base: Version
     val numericParts: List<Long?>
 
     init {

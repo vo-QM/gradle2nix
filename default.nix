@@ -35,4 +35,7 @@ let
     };
   };
 
-in gradle2nix
+in buildGradle {
+  envSpec = ./gradle-env.json;
+  pname = "gradle2nix";
+}

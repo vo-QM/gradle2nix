@@ -17,6 +17,9 @@ class GoldenTest : FunSpec({
         golden("dependency/snapshot-dynamic")
         golden("dependency/snapshot-redirect")
     }
+    context("included-build") {
+        golden("included-build")
+    }
     context("integration") {
         golden("integration/settings-buildscript")
     }

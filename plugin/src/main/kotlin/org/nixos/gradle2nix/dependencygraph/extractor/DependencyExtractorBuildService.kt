@@ -8,7 +8,6 @@ abstract class DependencyExtractorBuildService :
     DependencyExtractor(),
     BuildService<DependencyExtractorBuildService.Params>
 {
-    // Some parameters for the web server
     internal interface Params : BuildServiceParameters {
         val rendererClassName: Property<String>
     }

@@ -1,55 +1,43 @@
 {
   "io.micrometer:micrometer-bom": {
     "1.5.1": {
-      "needsPomRedirect": true,
-      "needsIvyRedirect": false,
-      "files": {
-        "micrometer-bom-1.5.1.pom": {
-          "urls": [
-            "file:/home/tad/proj/gradle2nix/fixtures/repositories/m2/io/micrometer/micrometer-bom/1.5.1/micrometer-bom-1.5.1.pom"
-          ],
-          "hash": "sha256-K/qF6ds8ck5sWvelJBYk+w+K04oQpT/4BtY57WVLRUI="
-        }
+      "micrometer-bom-1.5.1.pom": {
+        "urls": [
+          "file:/home/tad/proj/gradle2nix/fixtures/repositories/m2/io/micrometer/micrometer-bom/1.5.1/micrometer-bom-1.5.1.pom"
+        ],
+        "hash": "sha256-K/qF6ds8ck5sWvelJBYk+w+K04oQpT/4BtY57WVLRUI="
       }
     }
   },
   "io.micrometer:micrometer-core": {
     "1.5.1": {
-      "needsPomRedirect": true,
-      "needsIvyRedirect": false,
-      "files": {
-        "micrometer-core-1.5.1.jar": {
-          "urls": [
-            "file:/home/tad/proj/gradle2nix/fixtures/repositories/m2/io/micrometer/micrometer-core/1.5.1/micrometer-core-1.5.1.jar"
-          ],
-          "hash": "sha256-DtgVYBDVGDBWMwSfeKC6O+fwqd+N2q4eTizJgQ1wfI8="
-        },
-        "micrometer-core-1.5.1.pom": {
-          "urls": [
-            "file:/home/tad/proj/gradle2nix/fixtures/repositories/m2/io/micrometer/micrometer-core/1.5.1/micrometer-core-1.5.1.pom"
-          ],
-          "hash": "sha256-Cb4KaUHaOvdOz7VpDax6kJKuT2KWY5Ci73foX2xl6xw="
-        }
+      "micrometer-core-1.5.1.jar": {
+        "urls": [
+          "file:/home/tad/proj/gradle2nix/fixtures/repositories/m2/io/micrometer/micrometer-core/1.5.1/micrometer-core-1.5.1.jar"
+        ],
+        "hash": "sha256-DtgVYBDVGDBWMwSfeKC6O+fwqd+N2q4eTizJgQ1wfI8="
+      },
+      "micrometer-core-1.5.1.pom": {
+        "urls": [
+          "file:/home/tad/proj/gradle2nix/fixtures/repositories/m2/io/micrometer/micrometer-core/1.5.1/micrometer-core-1.5.1.pom"
+        ],
+        "hash": "sha256-Cb4KaUHaOvdOz7VpDax6kJKuT2KWY5Ci73foX2xl6xw="
       }
     }
   },
   "org.hdrhistogram:HdrHistogram": {
     "2.1.12": {
-      "needsPomRedirect": true,
-      "needsIvyRedirect": false,
-      "files": {
-        "HdrHistogram-2.1.12.jar": {
-          "urls": [
-            "file:/home/tad/proj/gradle2nix/fixtures/repositories/m2/org/hdrhistogram/HdrHistogram/2.1.12/HdrHistogram-2.1.12.jar"
-          ],
-          "hash": "sha256-47DEQpj8HBSa+/TImW+5JCeuQeRkm5NMpJWZG3hSuFU="
-        },
-        "HdrHistogram-2.1.12.pom": {
-          "urls": [
-            "file:/home/tad/proj/gradle2nix/fixtures/repositories/m2/org/hdrhistogram/HdrHistogram/2.1.12/HdrHistogram-2.1.12.pom"
-          ],
-          "hash": "sha256-f7PnkMFU0bXiMXC7jL9/cO8ICa8XIp8dywENd5llEIA="
-        }
+      "HdrHistogram-2.1.12.jar": {
+        "urls": [
+          "file:/home/tad/proj/gradle2nix/fixtures/repositories/m2/org/hdrhistogram/HdrHistogram/2.1.12/HdrHistogram-2.1.12.jar"
+        ],
+        "hash": "sha256-47DEQpj8HBSa+/TImW+5JCeuQeRkm5NMpJWZG3hSuFU="
+      },
+      "HdrHistogram-2.1.12.pom": {
+        "urls": [
+          "file:/home/tad/proj/gradle2nix/fixtures/repositories/m2/org/hdrhistogram/HdrHistogram/2.1.12/HdrHistogram-2.1.12.pom"
+        ],
+        "hash": "sha256-f7PnkMFU0bXiMXC7jL9/cO8ICa8XIp8dywENd5llEIA="
       }
     }
   }

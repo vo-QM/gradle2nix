@@ -16,7 +16,7 @@ subprojects {
 
 tasks {
     wrapper {
-        gradleVersion = "8.3"
+        gradleVersion = libs.versions.gradle.get()
         distributionType = Wrapper.DistributionType.ALL
     }
 }

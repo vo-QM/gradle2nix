@@ -6,8 +6,8 @@ import org.gradle.api.Task
 import org.gradle.api.invocation.Gradle
 import org.gradle.api.tasks.TaskProvider
 import org.gradle.util.GradleVersion
-import org.nixos.gradle2nix.RESOLVE_ALL_TASK
-import org.nixos.gradle2nix.RESOLVE_PROJECT_TASK
+import org.nixos.gradle2nix.model.RESOLVE_ALL_TASK
+import org.nixos.gradle2nix.model.RESOLVE_PROJECT_TASK
 
 // TODO: Rename these
 

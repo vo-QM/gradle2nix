@@ -3,13 +3,12 @@ package org.nixos.gradle2nix.metadata
 import java.io.File
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import nl.adaptivity.xmlutil.XmlStreaming
 import nl.adaptivity.xmlutil.serialization.XML
 import nl.adaptivity.xmlutil.serialization.XmlChildrenName
 import nl.adaptivity.xmlutil.serialization.XmlElement
 import nl.adaptivity.xmlutil.serialization.XmlSerialName
+import nl.adaptivity.xmlutil.xmlStreaming
 import org.nixos.gradle2nix.Logger
-import org.nixos.gradle2nix.DependencyCoordinates
 import org.nixos.gradle2nix.env.ModuleVersionId
 import org.nixos.gradle2nix.env.Version
 
@@ -108,6 +107,8 @@ data class Component(
     val version: Version,
     val artifacts: List<Artifact> = emptyList(),
 ) {
+    val id: ModuleVersionId get() = ModuleVersionId(group, name, version)
+
     constructor(id: ModuleVersionId, artifacts: List<Artifact>) : this(
         id.group,
         id.name,
@@ -134,7 +135,7 @@ val XmlFormat = XML {
 
 fun parseVerificationMetadata(logger: Logger, metadata: File): VerificationMetadata? {
     return try {
-        metadata.reader().buffered().let(XmlStreaming::newReader).use { input ->
+        metadata.reader().buffered().let(xmlStreaming::newReader).use { input ->
             XmlFormat.decodeFromReader(input)
         }
     } catch (e: Exception) {

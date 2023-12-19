@@ -1,0 +1,10 @@
+buildscript {
+    repositories {
+        maven { url = uri(System.getProperty("org.nixos.gradle2nix.m2")) }
+    }
+    dependencies {
+        classpath 'org.apache:foo:2.0.0'
+    }
+}
+
+rootProject.name = 'included-child'

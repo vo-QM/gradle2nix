@@ -73,7 +73,7 @@ suspend fun TestScope.fixture(
                 if (!tempDir.resolve("settings.gradle").exists() && !tempDir.resolve("settings.gradle.kts").exists()) {
                     Files.createFile(tempDir.resolve("settings.gradle").toPath())
                 }
-                app.main(listOf("-d", tempDir.toString()) + args.withM2())
+                app.main(listOf("-d", tempDir.toString()) + listOf("--debug") + args.withM2() + "-Dorg.gradle.internal.operations.trace=${tempDir.resolve("build").absolutePath}")
                 val file = tempDir.resolve("${app.envFile}.json")
                 file.shouldBeAFile()
                 val env: Env = file.inputStream().buffered().use { input ->

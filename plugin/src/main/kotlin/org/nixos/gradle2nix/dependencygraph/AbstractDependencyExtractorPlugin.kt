@@ -1,15 +1,26 @@
 package org.nixos.gradle2nix.dependencygraph
 
 import org.gradle.api.Plugin
+import org.gradle.api.internal.GradleInternal
+import org.gradle.api.internal.project.DefaultProjectRegistry
+import org.gradle.api.internal.project.ProjectInternal
+import org.gradle.api.internal.project.ProjectRegistry
 import org.gradle.api.invocation.Gradle
+import org.gradle.api.logging.Logging
 import org.gradle.api.provider.Provider
+import org.gradle.api.services.internal.RegisteredBuildServiceProvider
+import org.gradle.internal.build.BuildProjectRegistry
 import org.gradle.internal.build.event.BuildEventListenerRegistryInternal
+import org.gradle.internal.composite.IncludedBuildInternal
+import org.gradle.internal.operations.BuildOperationAncestryTracker
+import org.gradle.internal.operations.BuildOperationListenerManager
 import org.gradle.util.GradleVersion
 import org.nixos.gradle2nix.dependencygraph.extractor.DependencyExtractor
 import org.nixos.gradle2nix.dependencygraph.extractor.DependencyExtractorBuildService
 import org.nixos.gradle2nix.dependencygraph.extractor.LegacyDependencyExtractor
 import org.nixos.gradle2nix.dependencygraph.util.buildDirCompat
 import org.nixos.gradle2nix.dependencygraph.util.service
+import org.nixos.gradle2nix.model.ConfigurationTarget
 
 abstract class AbstractDependencyExtractorPlugin : Plugin<Gradle> {
     // Register extension functions on `Gradle` type
@@ -37,6 +48,15 @@ abstract class AbstractDependencyExtractorPlugin : Plugin<Gradle> {
             dependencyExtractorProvider
                 .get()
                 .rootProjectBuildDirectory = project.buildDirCompat
+        }
+
+        val logger = Logging.getLogger(AbstractDependencyExtractorPlugin::class.java.name)
+
+        gradle.projectsLoaded {
+            (gradle as GradleInternal).let { g ->
+                logger.lifecycle("all projects: ${g.owner.projects.allProjects}")
+                logger.lifecycle("included projects: ${g.includedBuilds().flatMap { it.target.projects.allProjects }.joinToString { it.identityPath.path }}")
+            }
         }
 
         // Register the service to listen for Build Events
@@ -122,7 +142,6 @@ abstract class AbstractDependencyExtractorPlugin : Plugin<Gradle> {
                 gradle: Gradle,
                 extractorServiceProvider: Provider<out DependencyExtractor>
             ) {
-                // No-op as DependencyExtractorService is Auto-Closable
             }
         }
     }

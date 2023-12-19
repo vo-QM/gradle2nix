@@ -5,7 +5,7 @@ import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.encodeToStream
 import org.nixos.gradle2nix.dependencygraph.DependencyGraphRenderer
-import org.nixos.gradle2nix.dependencygraph.model.ResolvedConfiguration
+import org.nixos.gradle2nix.model.ResolvedConfiguration
 
 @OptIn(ExperimentalSerializationApi::class)
 private val json = Json {

@@ -1,21 +1,17 @@
 {
   "com.badlogicgames.gdx:gdx-platform": {
     "1.9.9": {
-      "needsPomRedirect": true,
-      "needsIvyRedirect": false,
-      "files": {
-        "gdx-platform-1.9.9-natives-desktop.jar": {
-          "urls": [
-            "https://repo.maven.apache.org/maven2/com/badlogicgames/gdx/gdx-platform/1.9.9/gdx-platform-1.9.9-natives-desktop.jar"
-          ],
-          "hash": "sha256-e8c9VPpFH+LeJU6PgmCkOb/jutOxFnO6LPMaTxL2hU8="
-        },
-        "gdx-platform-1.9.9.pom": {
-          "urls": [
-            "https://repo.maven.apache.org/maven2/com/badlogicgames/gdx/gdx-platform/1.9.9/gdx-platform-1.9.9.pom"
-          ],
-          "hash": "sha256-SWnDZyJaErav4Z4sA+D1WA3U1aQOSR64sd8+cQzofSY="
-        }
+      "gdx-platform-1.9.9-natives-desktop.jar": {
+        "urls": [
+          "https://repo.maven.apache.org/maven2/com/badlogicgames/gdx/gdx-platform/1.9.9/gdx-platform-1.9.9-natives-desktop.jar"
+        ],
+        "hash": "sha256-e8c9VPpFH+LeJU6PgmCkOb/jutOxFnO6LPMaTxL2hU8="
+      },
+      "gdx-platform-1.9.9.pom": {
+        "urls": [
+          "https://repo.maven.apache.org/maven2/com/badlogicgames/gdx/gdx-platform/1.9.9/gdx-platform-1.9.9.pom"
+        ],
+        "hash": "sha256-SWnDZyJaErav4Z4sA+D1WA3U1aQOSR64sd8+cQzofSY="
       }
     }
   }

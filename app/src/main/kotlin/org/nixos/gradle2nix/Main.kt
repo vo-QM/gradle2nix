@@ -116,7 +116,8 @@ class Gradle2Nix : CliktCommand(
         if (appHome == null) {
             System.err.println("Error: could not locate the /share directory in the gradle2nix installation")
         }
-        val gradleHome = System.getenv("GRADLE_USER_HOME")?.let(::File) ?: File("${System.getProperty("user.home")}/.gradle")
+        val gradleHome =
+            System.getenv("GRADLE_USER_HOME")?.let(::File) ?: File("${System.getProperty("user.home")}/.gradle")
         val logger = Logger(verbose = !quiet, stacktrace = debug)
 
         val config = Config(
@@ -152,7 +153,7 @@ class Gradle2Nix : CliktCommand(
         val env = try {
             processDependencies(config)
         } catch (e: Throwable) {
-            logger.error("Dependency parsing failed", e)
+            logger.error("dependency parsing failed", e)
         }
 
         val outDir = outDir ?: projectDir

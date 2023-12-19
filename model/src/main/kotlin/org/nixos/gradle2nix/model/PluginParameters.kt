@@ -1,4 +1,4 @@
-package org.nixos.gradle2nix
+package org.nixos.gradle2nix.model
 
 const val PARAM_INCLUDE_PROJECTS = "NIX_INCLUDE_PROJECTS"
 const val PARAM_INCLUDE_CONFIGURATIONS = "NIX_INCLUDE_CONFIGURATIONS"

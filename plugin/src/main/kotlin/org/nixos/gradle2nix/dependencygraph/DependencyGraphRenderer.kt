@@ -1,7 +1,7 @@
 package org.nixos.gradle2nix.dependencygraph
 
 import java.io.File
-import org.nixos.gradle2nix.dependencygraph.model.ResolvedConfiguration
+import org.nixos.gradle2nix.model.ResolvedConfiguration
 
 interface DependencyGraphRenderer {
     fun outputDependencyGraph(

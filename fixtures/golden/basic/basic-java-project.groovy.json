@@ -1,101 +1,81 @@
 {
   "com.squareup.moshi:moshi": {
     "1.8.0": {
-      "needsPomRedirect": true,
-      "needsIvyRedirect": false,
-      "files": {
-        "moshi-1.8.0.jar": {
-          "urls": [
-            "https://repo.maven.apache.org/maven2/com/squareup/moshi/moshi/1.8.0/moshi-1.8.0.jar"
-          ],
-          "hash": "sha256-Qv50bSaU6hH+agK+zZ2iyj2v6Xye/VCg+a9cRZbnSmo="
-        },
-        "moshi-1.8.0.pom": {
-          "urls": [
-            "https://repo.maven.apache.org/maven2/com/squareup/moshi/moshi/1.8.0/moshi-1.8.0.pom"
-          ],
-          "hash": "sha256-FLuAWbnddiACWSkN+IfjfmaaB0qsnImUAePIEC/lII8="
-        }
+      "moshi-1.8.0.jar": {
+        "urls": [
+          "https://repo.maven.apache.org/maven2/com/squareup/moshi/moshi/1.8.0/moshi-1.8.0.jar"
+        ],
+        "hash": "sha256-Qv50bSaU6hH+agK+zZ2iyj2v6Xye/VCg+a9cRZbnSmo="
+      },
+      "moshi-1.8.0.pom": {
+        "urls": [
+          "https://repo.maven.apache.org/maven2/com/squareup/moshi/moshi/1.8.0/moshi-1.8.0.pom"
+        ],
+        "hash": "sha256-FLuAWbnddiACWSkN+IfjfmaaB0qsnImUAePIEC/lII8="
       }
     }
   },
   "com.squareup.okio:okio": {
     "2.2.2": {
-      "needsPomRedirect": true,
-      "needsIvyRedirect": false,
-      "files": {
-        "okio-2.2.2.jar": {
-          "urls": [
-            "https://repo.maven.apache.org/maven2/com/squareup/okio/okio/2.2.2/okio-2.2.2.jar"
-          ],
-          "hash": "sha256-5YyXQGprsROIk3UCmaxjxqoEs4trSerhv8rRpj75uhs="
-        },
-        "okio-2.2.2.pom": {
-          "urls": [
-            "https://repo.maven.apache.org/maven2/com/squareup/okio/okio/2.2.2/okio-2.2.2.pom"
-          ],
-          "hash": "sha256-/WIZiPf2lXAlc13G3QkLAKIPOju413ynkDYHf2KbFAs="
-        }
+      "okio-2.2.2.jar": {
+        "urls": [
+          "https://repo.maven.apache.org/maven2/com/squareup/okio/okio/2.2.2/okio-2.2.2.jar"
+        ],
+        "hash": "sha256-5YyXQGprsROIk3UCmaxjxqoEs4trSerhv8rRpj75uhs="
+      },
+      "okio-2.2.2.pom": {
+        "urls": [
+          "https://repo.maven.apache.org/maven2/com/squareup/okio/okio/2.2.2/okio-2.2.2.pom"
+        ],
+        "hash": "sha256-/WIZiPf2lXAlc13G3QkLAKIPOju413ynkDYHf2KbFAs="
       }
     }
   },
   "org.jetbrains.kotlin:kotlin-stdlib": {
     "1.2.60": {
-      "needsPomRedirect": true,
-      "needsIvyRedirect": false,
-      "files": {
-        "kotlin-stdlib-1.2.60.jar": {
-          "urls": [
-            "https://repo.maven.apache.org/maven2/org/jetbrains/kotlin/kotlin-stdlib/1.2.60/kotlin-stdlib-1.2.60.jar"
-          ],
-          "hash": "sha256-ahMCmPUXGsUqHiSW9+rnhbb1ZBbqPMuZ5DRNBNg/8HE="
-        },
-        "kotlin-stdlib-1.2.60.pom": {
-          "urls": [
-            "https://repo.maven.apache.org/maven2/org/jetbrains/kotlin/kotlin-stdlib/1.2.60/kotlin-stdlib-1.2.60.pom"
-          ],
-          "hash": "sha256-5jKJkgnmtMqrlA/YLk7GOjLjJkP4Fff6cJdkeJDXnxg="
-        }
+      "kotlin-stdlib-1.2.60.jar": {
+        "urls": [
+          "https://repo.maven.apache.org/maven2/org/jetbrains/kotlin/kotlin-stdlib/1.2.60/kotlin-stdlib-1.2.60.jar"
+        ],
+        "hash": "sha256-ahMCmPUXGsUqHiSW9+rnhbb1ZBbqPMuZ5DRNBNg/8HE="
+      },
+      "kotlin-stdlib-1.2.60.pom": {
+        "urls": [
+          "https://repo.maven.apache.org/maven2/org/jetbrains/kotlin/kotlin-stdlib/1.2.60/kotlin-stdlib-1.2.60.pom"
+        ],
+        "hash": "sha256-5jKJkgnmtMqrlA/YLk7GOjLjJkP4Fff6cJdkeJDXnxg="
       }
     }
   },
   "org.jetbrains.kotlin:kotlin-stdlib-common": {
     "1.2.60": {
-      "needsPomRedirect": true,
-      "needsIvyRedirect": false,
-      "files": {
-        "kotlin-stdlib-common-1.2.60.jar": {
-          "urls": [
-            "https://repo.maven.apache.org/maven2/org/jetbrains/kotlin/kotlin-stdlib-common/1.2.60/kotlin-stdlib-common-1.2.60.jar"
-          ],
-          "hash": "sha256-CbQ3WgZc8SeryZjF3PIrFmTEWvQrSJSZ16j0+Kt5P7E="
-        },
-        "kotlin-stdlib-common-1.2.60.pom": {
-          "urls": [
-            "https://repo.maven.apache.org/maven2/org/jetbrains/kotlin/kotlin-stdlib-common/1.2.60/kotlin-stdlib-common-1.2.60.pom"
-          ],
-          "hash": "sha256-gwwnrx4c8k8PUm6kV5AcQ/OMGbtvfl03Y8PSU98bjaE="
-        }
+      "kotlin-stdlib-common-1.2.60.jar": {
+        "urls": [
+          "https://repo.maven.apache.org/maven2/org/jetbrains/kotlin/kotlin-stdlib-common/1.2.60/kotlin-stdlib-common-1.2.60.jar"
+        ],
+        "hash": "sha256-CbQ3WgZc8SeryZjF3PIrFmTEWvQrSJSZ16j0+Kt5P7E="
+      },
+      "kotlin-stdlib-common-1.2.60.pom": {
+        "urls": [
+          "https://repo.maven.apache.org/maven2/org/jetbrains/kotlin/kotlin-stdlib-common/1.2.60/kotlin-stdlib-common-1.2.60.pom"
+        ],
+        "hash": "sha256-gwwnrx4c8k8PUm6kV5AcQ/OMGbtvfl03Y8PSU98bjaE="
       }
     }
   },
   "org.jetbrains:annotations": {
     "13.0": {
-      "needsPomRedirect": true,
-      "needsIvyRedirect": false,
-      "files": {
-        "annotations-13.0.jar": {
-          "urls": [
-            "https://repo.maven.apache.org/maven2/org/jetbrains/annotations/13.0/annotations-13.0.jar"
-          ],
-          "hash": "sha256-rOKhDcji1f00kl7KwD5JiLLA+FFlDJS4zvSbob0RFHg="
-        },
-        "annotations-13.0.pom": {
-          "urls": [
-            "https://repo.maven.apache.org/maven2/org/jetbrains/annotations/13.0/annotations-13.0.pom"
-          ],
-          "hash": "sha256-llrrK+3/NpgZvd4b96CzuJuCR91pyIuGN112Fju4w5c="
-        }
+      "annotations-13.0.jar": {
+        "urls": [
+          "https://repo.maven.apache.org/maven2/org/jetbrains/annotations/13.0/annotations-13.0.jar"
+        ],
+        "hash": "sha256-rOKhDcji1f00kl7KwD5JiLLA+FFlDJS4zvSbob0RFHg="
+      },
+      "annotations-13.0.pom": {
+        "urls": [
+          "https://repo.maven.apache.org/maven2/org/jetbrains/annotations/13.0/annotations-13.0.pom"
+        ],
+        "hash": "sha256-llrrK+3/NpgZvd4b96CzuJuCR91pyIuGN112Fju4w5c="
       }
     }
   }

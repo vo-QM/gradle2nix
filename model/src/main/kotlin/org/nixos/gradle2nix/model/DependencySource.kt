@@ -1,5 +1,6 @@
-package org.nixos.gradle2nix.dependencygraph.model
+package org.nixos.gradle2nix.model
 
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 /**
@@ -10,4 +11,16 @@ import kotlinx.serialization.Serializable
  * We attempt to map this to an actual source file location when building a dependency report.
  */
 @Serializable
-data class DependencySource(val id: String, val path: String)
+data class DependencySource(
+    val targetType: ConfigurationTarget,
+    val targetPath: String,
+    val buildPath: String,
+)
+
+@Serializable
+enum class ConfigurationTarget {
+    @SerialName("gradle") GRADLE,
+    @SerialName("settings") SETTINGS,
+    @SerialName("buildscript") BUILDSCRIPT,
+    @SerialName("project") PROJECT,
+}
