@@ -13,7 +13,7 @@ data class ResolvedConfiguration(
         allDependencies.add(component)
     }
 
-    fun hasDependency(componentId: String): Boolean {
+    fun hasDependency(componentId: DependencyCoordinates): Boolean {
         return allDependencies.any { it.id == componentId }
     }
 }

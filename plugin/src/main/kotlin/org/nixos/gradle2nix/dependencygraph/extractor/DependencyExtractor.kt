@@ -205,17 +205,19 @@ abstract class DependencyExtractor :
         val resolvedConfiguration = ResolvedConfiguration(source, details.configurationName, repositories)
 
         for (directDependency in getResolvedDependencies(rootComponent)) {
-            val moduleComponentId = directDependency.id as? ModuleComponentIdentifier ?: continue
-            val directDep = createComponentNode(
-                moduleComponentId,
-                source,
-                true,
-                directDependency,
-                result.getRepositoryId(directDependency)
-            )
-            resolvedConfiguration.addDependency(directDep)
+            val coordinates = (directDependency.id as? ModuleComponentIdentifier)?.let(::coordinates)
+            if (coordinates != null) {
+                val directDep = createComponentNode(
+                    coordinates,
+                    source,
+                    true,
+                    directDependency,
+                    result.getRepositoryId(directDependency)
+                )
+                resolvedConfiguration.addDependency(directDep)
 
-            walkComponentDependencies(result, directDependency, directDep.source, resolvedConfiguration)
+                walkComponentDependencies(result, directDependency, directDep.source, resolvedConfiguration)
+            }
         }
 
         resolvedConfigurations.add(resolvedConfiguration)
@@ -232,19 +234,17 @@ abstract class DependencyExtractor :
 
         val dependencyComponents = getResolvedDependencies(component)
         for (dependencyComponent in dependencyComponents) {
-            if (!resolvedConfiguration.hasDependency(componentId(dependencyComponent))) {
-                val moduleComponentId = dependencyComponent.id as? ModuleComponentIdentifier
-                if (moduleComponentId != null) {
-                    val dependencyNode = createComponentNode(
-                        moduleComponentId,
-                        componentSource,
-                        direct,
-                        dependencyComponent,
-                        result.getRepositoryId(component)
-                    )
-                    resolvedConfiguration.addDependency(dependencyNode)
-                }
-
+            val coordinates = (dependencyComponent.id as? ModuleComponentIdentifier)?.let(::coordinates)
+                ?: continue
+            if (!resolvedConfiguration.hasDependency(coordinates)) {
+                val dependencyNode = createComponentNode(
+                    coordinates,
+                    componentSource,
+                    direct,
+                    dependencyComponent,
+                    result.getRepositoryId(component)
+                )
+                resolvedConfiguration.addDependency(dependencyNode)
                 walkComponentDependencies(result, dependencyComponent, componentSource, resolvedConfiguration)
             }
         }
@@ -271,7 +271,7 @@ abstract class DependencyExtractor :
     }
 
     private fun createComponentNode(
-        componentId: ModuleComponentIdentifier,
+        coordinates: DependencyCoordinates,
         source: DependencySource,
         direct: Boolean,
         component: ResolvedComponentResult,
@@ -279,12 +279,10 @@ abstract class DependencyExtractor :
     ): ResolvedDependency {
         val componentDependencies =
             component.dependencies.filterIsInstance<ResolvedDependencyResult>().map { componentId(it.selected) }
-        val coordinates = coordinates(componentId)
         return ResolvedDependency(
-            componentId.displayName,
+            coordinates,
             source,
             direct,
-            coordinates,
             repositoryId,
             componentDependencies,
         )
@@ -301,16 +299,6 @@ abstract class DependencyExtractor :
             componentId.version,
             (componentId as? MavenUniqueSnapshotComponentIdentifier)?.timestamp
         )
-    }
-
-    private fun artifactType(type: Class<out Artifact>): ResolvedArtifact.Type? {
-        return when (type) {
-            SourcesArtifact::class.java -> ResolvedArtifact.Type.SOURCES
-            JavadocArtifact::class.java -> ResolvedArtifact.Type.JAVADOC
-            IvyDescriptorArtifact::class.java -> ResolvedArtifact.Type.IVY_DESCRIPTOR
-            MavenPomArtifact::class.java -> ResolvedArtifact.Type.MAVEN_POM
-            else -> null
-        }
     }
 
     private fun writeDependencyGraph() {

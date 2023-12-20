@@ -3,13 +3,13 @@
     "-SNAPSHOT": {
       "packr--SNAPSHOT.jar": {
         "urls": [
-          "https://jitpack.io/com/github/anuken/packr/-SNAPSHOT/packr--SNAPSHOT.jar"
+          "https://jitpack.io/com/github/anuken/packr/-SNAPSHOT/packr--packr-1.2-g034efe5-114.jar"
         ],
         "hash": "sha256-XrfVZLc7efr2n3Bz6mOw8DkRI0T8rU8B/MKUMVDl71w="
       },
       "packr--SNAPSHOT.pom": {
         "urls": [
-          "https://jitpack.io/com/github/anuken/packr/-SNAPSHOT/packr--SNAPSHOT.pom"
+          "https://jitpack.io/com/github/anuken/packr/-SNAPSHOT/packr--packr-1.2-g034efe5-114.pom"
         ],
         "hash": "sha256-xP28J7blX1IzuJxD4u/wy1ZbwAT5RAajBcpBWs1fAxU="
       }

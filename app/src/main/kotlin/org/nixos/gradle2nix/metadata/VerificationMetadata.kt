@@ -9,8 +9,7 @@ import nl.adaptivity.xmlutil.serialization.XmlElement
 import nl.adaptivity.xmlutil.serialization.XmlSerialName
 import nl.adaptivity.xmlutil.xmlStreaming
 import org.nixos.gradle2nix.Logger
-import org.nixos.gradle2nix.env.ModuleVersionId
-import org.nixos.gradle2nix.env.Version
+import org.nixos.gradle2nix.model.DependencyCoordinates
 
 sealed interface Coordinates {
     val group: String?
@@ -104,15 +103,17 @@ data class Artifact(
 data class Component(
     val group: String,
     val name: String,
-    val version: Version,
+    val version: String,
+    val timestamp: String? = null,
     val artifacts: List<Artifact> = emptyList(),
 ) {
-    val id: ModuleVersionId get() = ModuleVersionId(group, name, version)
+    val id: DependencyCoordinates get() = DependencyCoordinates(group, name, version, timestamp)
 
-    constructor(id: ModuleVersionId, artifacts: List<Artifact>) : this(
+    constructor(id: DependencyCoordinates, artifacts: List<Artifact>) : this(
         id.group,
-        id.name,
+        id.module,
         id.version,
+        id.timestamp,
         artifacts
     )
 }

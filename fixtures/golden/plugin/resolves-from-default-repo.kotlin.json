@@ -3,15 +3,15 @@
     "5.6.0": {
       "jna-5.6.0.jar": {
         "urls": [
-          "https://plugins.gradle.org/m2/net/java/dev/jna/jna/5.6.0/jna-5.6.0.jar",
-          "https://repo.maven.apache.org/maven2/net/java/dev/jna/jna/5.6.0/jna-5.6.0.jar"
+          "https://repo.maven.apache.org/maven2/net/java/dev/jna/jna/5.6.0/jna-5.6.0.jar",
+          "https://plugins.gradle.org/m2/net/java/dev/jna/jna/5.6.0/jna-5.6.0.jar"
         ],
         "hash": "sha256-VVfiNaiqL5dm1dxgnWeUjyqIMsLXls6p7x1svgs7fq8="
       },
       "jna-5.6.0.pom": {
         "urls": [
-          "https://plugins.gradle.org/m2/net/java/dev/jna/jna/5.6.0/jna-5.6.0.pom",
-          "https://repo.maven.apache.org/maven2/net/java/dev/jna/jna/5.6.0/jna-5.6.0.pom"
+          "https://repo.maven.apache.org/maven2/net/java/dev/jna/jna/5.6.0/jna-5.6.0.pom",
+          "https://plugins.gradle.org/m2/net/java/dev/jna/jna/5.6.0/jna-5.6.0.pom"
         ],
         "hash": "sha256-X+gbAlWXjyRhbTexBgi3lJil8wc+HZsgONhzaoMfJgg="
       }
@@ -21,15 +21,15 @@
     "1.0.20200330": {
       "trove4j-1.0.20200330.jar": {
         "urls": [
-          "https://plugins.gradle.org/m2/org/jetbrains/intellij/deps/trove4j/1.0.20200330/trove4j-1.0.20200330.jar",
-          "https://repo.maven.apache.org/maven2/org/jetbrains/intellij/deps/trove4j/1.0.20200330/trove4j-1.0.20200330.jar"
+          "https://repo.maven.apache.org/maven2/org/jetbrains/intellij/deps/trove4j/1.0.20200330/trove4j-1.0.20200330.jar",
+          "https://plugins.gradle.org/m2/org/jetbrains/intellij/deps/trove4j/1.0.20200330/trove4j-1.0.20200330.jar"
         ],
         "hash": "sha256-xf1yW/+rUYRr88d9sTg8YKquv+G3/i8A0j/ht98KQ50="
       },
       "trove4j-1.0.20200330.pom": {
         "urls": [
-          "https://plugins.gradle.org/m2/org/jetbrains/intellij/deps/trove4j/1.0.20200330/trove4j-1.0.20200330.pom",
-          "https://repo.maven.apache.org/maven2/org/jetbrains/intellij/deps/trove4j/1.0.20200330/trove4j-1.0.20200330.pom"
+          "https://repo.maven.apache.org/maven2/org/jetbrains/intellij/deps/trove4j/1.0.20200330/trove4j-1.0.20200330.pom",
+          "https://plugins.gradle.org/m2/org/jetbrains/intellij/deps/trove4j/1.0.20200330/trove4j-1.0.20200330.pom"
         ],
         "hash": "sha256-h3IcuqZaPJfYsbqdIHhA8WTJ/jh1n8nqEP/iZWX40+k="
       }
@@ -97,15 +97,15 @@
     "1.7.21": {
       "kotlin-compiler-embeddable-1.7.21.jar": {
         "urls": [
-          "https://plugins.gradle.org/m2/org/jetbrains/kotlin/kotlin-compiler-embeddable/1.7.21/kotlin-compiler-embeddable-1.7.21.jar",
-          "https://repo.maven.apache.org/maven2/org/jetbrains/kotlin/kotlin-compiler-embeddable/1.7.21/kotlin-compiler-embeddable-1.7.21.jar"
+          "https://repo.maven.apache.org/maven2/org/jetbrains/kotlin/kotlin-compiler-embeddable/1.7.21/kotlin-compiler-embeddable-1.7.21.jar",
+          "https://plugins.gradle.org/m2/org/jetbrains/kotlin/kotlin-compiler-embeddable/1.7.21/kotlin-compiler-embeddable-1.7.21.jar"
         ],
         "hash": "sha256-Ty5JK8x5XgaA4/h67qGtrp8wbK9SBAuUpvoPiP2skvk="
       },
       "kotlin-compiler-embeddable-1.7.21.pom": {
         "urls": [
-          "https://plugins.gradle.org/m2/org/jetbrains/kotlin/kotlin-compiler-embeddable/1.7.21/kotlin-compiler-embeddable-1.7.21.pom",
-          "https://repo.maven.apache.org/maven2/org/jetbrains/kotlin/kotlin-compiler-embeddable/1.7.21/kotlin-compiler-embeddable-1.7.21.pom"
+          "https://repo.maven.apache.org/maven2/org/jetbrains/kotlin/kotlin-compiler-embeddable/1.7.21/kotlin-compiler-embeddable-1.7.21.pom",
+          "https://plugins.gradle.org/m2/org/jetbrains/kotlin/kotlin-compiler-embeddable/1.7.21/kotlin-compiler-embeddable-1.7.21.pom"
         ],
         "hash": "sha256-CwIzMip2MO/eEzUmjkYSPw1tNjg5gg/TfE7Lbv+njjs="
       }
@@ -147,15 +147,15 @@
     "1.7.21": {
       "kotlin-daemon-embeddable-1.7.21.jar": {
         "urls": [
-          "https://plugins.gradle.org/m2/org/jetbrains/kotlin/kotlin-daemon-embeddable/1.7.21/kotlin-daemon-embeddable-1.7.21.jar",
-          "https://repo.maven.apache.org/maven2/org/jetbrains/kotlin/kotlin-daemon-embeddable/1.7.21/kotlin-daemon-embeddable-1.7.21.jar"
+          "https://repo.maven.apache.org/maven2/org/jetbrains/kotlin/kotlin-daemon-embeddable/1.7.21/kotlin-daemon-embeddable-1.7.21.jar",
+          "https://plugins.gradle.org/m2/org/jetbrains/kotlin/kotlin-daemon-embeddable/1.7.21/kotlin-daemon-embeddable-1.7.21.jar"
         ],
         "hash": "sha256-A+bwJUNSJIlOSe5e2EfLCwtKh540z6uQ1wzakmKnV00="
       },
       "kotlin-daemon-embeddable-1.7.21.pom": {
         "urls": [
-          "https://plugins.gradle.org/m2/org/jetbrains/kotlin/kotlin-daemon-embeddable/1.7.21/kotlin-daemon-embeddable-1.7.21.pom",
-          "https://repo.maven.apache.org/maven2/org/jetbrains/kotlin/kotlin-daemon-embeddable/1.7.21/kotlin-daemon-embeddable-1.7.21.pom"
+          "https://repo.maven.apache.org/maven2/org/jetbrains/kotlin/kotlin-daemon-embeddable/1.7.21/kotlin-daemon-embeddable-1.7.21.pom",
+          "https://plugins.gradle.org/m2/org/jetbrains/kotlin/kotlin-daemon-embeddable/1.7.21/kotlin-daemon-embeddable-1.7.21.pom"
         ],
         "hash": "sha256-vB3pwgh7ouTlQQF6i66PQF7IAKGK5MJH6R8rVedh5kk="
       }
@@ -371,15 +371,15 @@
     "1.7.21": {
       "kotlin-scripting-common-1.7.21.jar": {
         "urls": [
-          "https://plugins.gradle.org/m2/org/jetbrains/kotlin/kotlin-scripting-common/1.7.21/kotlin-scripting-common-1.7.21.jar",
-          "https://repo.maven.apache.org/maven2/org/jetbrains/kotlin/kotlin-scripting-common/1.7.21/kotlin-scripting-common-1.7.21.jar"
+          "https://repo.maven.apache.org/maven2/org/jetbrains/kotlin/kotlin-scripting-common/1.7.21/kotlin-scripting-common-1.7.21.jar",
+          "https://plugins.gradle.org/m2/org/jetbrains/kotlin/kotlin-scripting-common/1.7.21/kotlin-scripting-common-1.7.21.jar"
         ],
         "hash": "sha256-0ZLMLNlDFecijrkTZqNpdmpoIrPOvKwUwR1MSXM2y6Q="
       },
       "kotlin-scripting-common-1.7.21.pom": {
         "urls": [
-          "https://plugins.gradle.org/m2/org/jetbrains/kotlin/kotlin-scripting-common/1.7.21/kotlin-scripting-common-1.7.21.pom",
-          "https://repo.maven.apache.org/maven2/org/jetbrains/kotlin/kotlin-scripting-common/1.7.21/kotlin-scripting-common-1.7.21.pom"
+          "https://repo.maven.apache.org/maven2/org/jetbrains/kotlin/kotlin-scripting-common/1.7.21/kotlin-scripting-common-1.7.21.pom",
+          "https://plugins.gradle.org/m2/org/jetbrains/kotlin/kotlin-scripting-common/1.7.21/kotlin-scripting-common-1.7.21.pom"
         ],
         "hash": "sha256-2xzYRWGPDLQXOK3H72jZ+NIjZ1sFg+NbsMCEA30AWe4="
       }
@@ -389,15 +389,15 @@
     "1.7.21": {
       "kotlin-scripting-compiler-embeddable-1.7.21.jar": {
         "urls": [
-          "https://plugins.gradle.org/m2/org/jetbrains/kotlin/kotlin-scripting-compiler-embeddable/1.7.21/kotlin-scripting-compiler-embeddable-1.7.21.jar",
-          "https://repo.maven.apache.org/maven2/org/jetbrains/kotlin/kotlin-scripting-compiler-embeddable/1.7.21/kotlin-scripting-compiler-embeddable-1.7.21.jar"
+          "https://repo.maven.apache.org/maven2/org/jetbrains/kotlin/kotlin-scripting-compiler-embeddable/1.7.21/kotlin-scripting-compiler-embeddable-1.7.21.jar",
+          "https://plugins.gradle.org/m2/org/jetbrains/kotlin/kotlin-scripting-compiler-embeddable/1.7.21/kotlin-scripting-compiler-embeddable-1.7.21.jar"
         ],
         "hash": "sha256-qu9jHwICEl2ZHZgjRxn4ZK1anW40m/DtRGsTd9gXGKE="
       },
       "kotlin-scripting-compiler-embeddable-1.7.21.pom": {
         "urls": [
-          "https://plugins.gradle.org/m2/org/jetbrains/kotlin/kotlin-scripting-compiler-embeddable/1.7.21/kotlin-scripting-compiler-embeddable-1.7.21.pom",
-          "https://repo.maven.apache.org/maven2/org/jetbrains/kotlin/kotlin-scripting-compiler-embeddable/1.7.21/kotlin-scripting-compiler-embeddable-1.7.21.pom"
+          "https://repo.maven.apache.org/maven2/org/jetbrains/kotlin/kotlin-scripting-compiler-embeddable/1.7.21/kotlin-scripting-compiler-embeddable-1.7.21.pom",
+          "https://plugins.gradle.org/m2/org/jetbrains/kotlin/kotlin-scripting-compiler-embeddable/1.7.21/kotlin-scripting-compiler-embeddable-1.7.21.pom"
         ],
         "hash": "sha256-xHXL2+0BepcMD9y46qu1UNc9E6T+a4e3efxM9S148JM="
       }
@@ -407,15 +407,15 @@
     "1.7.21": {
       "kotlin-scripting-compiler-impl-embeddable-1.7.21.jar": {
         "urls": [
-          "https://plugins.gradle.org/m2/org/jetbrains/kotlin/kotlin-scripting-compiler-impl-embeddable/1.7.21/kotlin-scripting-compiler-impl-embeddable-1.7.21.jar",
-          "https://repo.maven.apache.org/maven2/org/jetbrains/kotlin/kotlin-scripting-compiler-impl-embeddable/1.7.21/kotlin-scripting-compiler-impl-embeddable-1.7.21.jar"
+          "https://repo.maven.apache.org/maven2/org/jetbrains/kotlin/kotlin-scripting-compiler-impl-embeddable/1.7.21/kotlin-scripting-compiler-impl-embeddable-1.7.21.jar",
+          "https://plugins.gradle.org/m2/org/jetbrains/kotlin/kotlin-scripting-compiler-impl-embeddable/1.7.21/kotlin-scripting-compiler-impl-embeddable-1.7.21.jar"
         ],
         "hash": "sha256-ZOK9uuvzgJSzwh5nCX5Qe4NoTaQTi6h6CwmhMgOXVCg="
       },
       "kotlin-scripting-compiler-impl-embeddable-1.7.21.pom": {
         "urls": [
-          "https://plugins.gradle.org/m2/org/jetbrains/kotlin/kotlin-scripting-compiler-impl-embeddable/1.7.21/kotlin-scripting-compiler-impl-embeddable-1.7.21.pom",
-          "https://repo.maven.apache.org/maven2/org/jetbrains/kotlin/kotlin-scripting-compiler-impl-embeddable/1.7.21/kotlin-scripting-compiler-impl-embeddable-1.7.21.pom"
+          "https://repo.maven.apache.org/maven2/org/jetbrains/kotlin/kotlin-scripting-compiler-impl-embeddable/1.7.21/kotlin-scripting-compiler-impl-embeddable-1.7.21.pom",
+          "https://plugins.gradle.org/m2/org/jetbrains/kotlin/kotlin-scripting-compiler-impl-embeddable/1.7.21/kotlin-scripting-compiler-impl-embeddable-1.7.21.pom"
         ],
         "hash": "sha256-5c0+HEj+qhC1YVqidOFh5/dcFijcJhZ1ALZ0b4gfweM="
       }
@@ -425,15 +425,15 @@
     "1.7.21": {
       "kotlin-scripting-jvm-1.7.21.jar": {
         "urls": [
-          "https://plugins.gradle.org/m2/org/jetbrains/kotlin/kotlin-scripting-jvm/1.7.21/kotlin-scripting-jvm-1.7.21.jar",
-          "https://repo.maven.apache.org/maven2/org/jetbrains/kotlin/kotlin-scripting-jvm/1.7.21/kotlin-scripting-jvm-1.7.21.jar"
+          "https://repo.maven.apache.org/maven2/org/jetbrains/kotlin/kotlin-scripting-jvm/1.7.21/kotlin-scripting-jvm-1.7.21.jar",
+          "https://plugins.gradle.org/m2/org/jetbrains/kotlin/kotlin-scripting-jvm/1.7.21/kotlin-scripting-jvm-1.7.21.jar"
         ],
         "hash": "sha256-Uz441a1oFCoFE0HyK8cO113IUGSxk3rPBRN1XMPwSF4="
       },
       "kotlin-scripting-jvm-1.7.21.pom": {
         "urls": [
-          "https://plugins.gradle.org/m2/org/jetbrains/kotlin/kotlin-scripting-jvm/1.7.21/kotlin-scripting-jvm-1.7.21.pom",
-          "https://repo.maven.apache.org/maven2/org/jetbrains/kotlin/kotlin-scripting-jvm/1.7.21/kotlin-scripting-jvm-1.7.21.pom"
+          "https://repo.maven.apache.org/maven2/org/jetbrains/kotlin/kotlin-scripting-jvm/1.7.21/kotlin-scripting-jvm-1.7.21.pom",
+          "https://plugins.gradle.org/m2/org/jetbrains/kotlin/kotlin-scripting-jvm/1.7.21/kotlin-scripting-jvm-1.7.21.pom"
         ],
         "hash": "sha256-cnwtOnluoiOWPu7P7kHvKygsVbZ+V8O0mgFwpMSbfGE="
       }

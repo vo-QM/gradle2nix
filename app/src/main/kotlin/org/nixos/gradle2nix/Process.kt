@@ -21,8 +21,6 @@ import org.nixos.gradle2nix.env.ArtifactSet
 import org.nixos.gradle2nix.env.Env
 import org.nixos.gradle2nix.env.Module
 import org.nixos.gradle2nix.env.ModuleId
-import org.nixos.gradle2nix.env.ModuleVersionId
-import org.nixos.gradle2nix.env.Version
 import org.nixos.gradle2nix.metadata.Checksum
 import org.nixos.gradle2nix.metadata.Component
 import org.nixos.gradle2nix.metadata.Md5
@@ -31,6 +29,8 @@ import org.nixos.gradle2nix.metadata.Sha256
 import org.nixos.gradle2nix.metadata.Sha512
 import org.nixos.gradle2nix.metadata.VerificationMetadata
 import org.nixos.gradle2nix.metadata.parseVerificationMetadata
+import org.nixos.gradle2nix.model.DependencyCoordinates
+import org.nixos.gradle2nix.model.Version
 import org.nixos.gradle2nix.module.GradleModule
 import org.nixos.gradle2nix.module.Variant
 
@@ -44,12 +44,10 @@ private fun shouldSkipRepository(repository: Repository): Boolean {
 
 fun processDependencies(config: Config): Env {
     val verificationMetadata = readVerificationMetadata(config)
-    val verificationComponents = verificationMetadata?.components?.associateBy {
-        ModuleVersionId(ModuleId(it.group, it.name), it.version)
-    } ?: emptyMap()
-    val moduleCache = mutableMapOf<ModuleVersionId, GradleModule?>()
-    val pomCache = mutableMapOf<ModuleVersionId, Pair<String, ArtifactFile>?>()
-    val ivyCache = mutableMapOf<ModuleVersionId, Pair<String, ArtifactFile>?>()
+    val verificationComponents = verificationMetadata?.components?.associateBy { it.id } ?: emptyMap()
+    val moduleCache = mutableMapOf<DependencyCoordinates, GradleModule?>()
+    val pomCache = mutableMapOf<DependencyCoordinates, Pair<String, ArtifactFile>?>()
+    val ivyCache = mutableMapOf<DependencyCoordinates, Pair<String, ArtifactFile>?>()
     val configurations = readDependencyGraph(config)
 
     val repositories = configurations
@@ -71,15 +69,14 @@ fun processDependencies(config: Config): Env {
 
     return configurations.asSequence()
         .flatMap { it.allDependencies.asSequence() }
-        .filterNot { it.id.startsWith("project ") || it.repository == null || it.repository !in repositories }
-        .groupBy { ModuleId(it.coordinates.group, it.coordinates.module) }
-        .mapValues { (id, deps) ->
-            val versions = deps.groupBy { Version(it.coordinates.version) }
-                .mapValues { (version, deps) ->
-                    val componentId = ModuleVersionId(id, version)
+        .filterNot { it.repository == null || it.repository !in repositories }
+        .groupBy { ModuleId(it.id.group, it.id.module) }
+        .mapValues { (_, deps) ->
+            val byVersion = deps.groupBy { it.id }
+                .mapValues { (componentId, deps) ->
                     val dep = MergedDependency(
                         id = componentId,
-                        repositories = deps.mapNotNull { repositories[it.repository] }
+                        repositories = deps.mapNotNull { repositories[it.repository] }.distinct()
                     )
                     val component = verificationComponents[componentId]
                         ?: verifyComponentFilesInCache(config, componentId)
@@ -93,7 +90,7 @@ fun processDependencies(config: Config): Env {
                         maybeDownloadMavenPom(config.logger, component, dep.repositories, gradleModule)
                     }
                     val ivyArtifact = ivyCache.getOrPut(componentId) {
-                        maybeDownloadIvyDescriptor(config.logger, component, dep.repositories, gradleModule)
+                        maybeDownloadIvyDescriptor(config.logger, component, dep.repositories)
                     }
 
                     val files = buildMap {
@@ -104,7 +101,7 @@ fun processDependencies(config: Config): Env {
                                 artifact.name,
                                 ArtifactFile(
                                     urls = dep.repositories.flatMap { repo ->
-                                        artifactUrls(componentId, artifact.name, repo, gradleModule)
+                                        artifactUrls(config.logger, componentId, artifact.name, repo, gradleModule)
                                     }.distinct(),
                                     hash = artifact.checksums.first().toSri()
                                 )
@@ -114,8 +111,9 @@ fun processDependencies(config: Config): Env {
 
                     ArtifactSet(files)
                 }
+                .mapKeys { Version(it.key.version) }
                 .toSortedMap(Version.Comparator.reversed())
-            Module(versions)
+            Module(byVersion)
         }
         .toSortedMap(compareBy(ModuleId::toString))
 }
@@ -134,9 +132,9 @@ private fun readDependencyGraph(config: Config): List<ResolvedConfiguration> {
 
 private fun verifyComponentFilesInCache(
     config: Config,
-    id: ModuleVersionId,
+    id: DependencyCoordinates,
 ): Component? {
-    val cacheDir = with(id) { config.gradleHome.resolve("caches/modules-2/files-2.1/$group/$name/$version") }
+    val cacheDir = with(id) { config.gradleHome.resolve("caches/modules-2/files-2.1/$group/$module/$version") }
     if (!cacheDir.exists()) {
         return null
     }
@@ -149,17 +147,17 @@ private fun verifyComponentFilesInCache(
 
 private fun verifyComponentFilesInTestRepository(
     config: Config,
-    id: ModuleVersionId
+    id: DependencyCoordinates
 ): Component? {
     if (m2 == null) return null
     val dir = with(id) {
-        File(URI.create(m2)).resolve("${group.replace(".", "/")}/$name/$version")
+        File(URI.create(m2)).resolve("${group.replace(".", "/")}/$module/$version")
     }
     if (!dir.exists()) {
         config.logger.log("$id: not found in m2 repository; tried $dir")
         return null
     }
-    val verifications = dir.walk().filter { it.isFile && it.name.startsWith(id.name) }.map { f ->
+    val verifications = dir.walk().filter { it.isFile && it.name.startsWith(id.module) }.map { f ->
         ArtifactMetadata(
             f.name,
             sha256 = Sha256(f.sha256())
@@ -175,7 +173,7 @@ private fun maybeDownloadGradleModule(
     repos: List<Repository>
 ): ArtifactDownload<Pair<String, GradleModule>>? {
     if (component.artifacts.none { it.name.endsWith(".module") }) return null
-    val filename = with(component.id) { "$name-$version.module" }
+    val filename = with(component.id) { "$module-$version.module" }
     return maybeDownloadArtifact(logger, component.id, filename, repos)?.let { artifact ->
         try {
             ArtifactDownload(
@@ -199,12 +197,12 @@ private fun maybeDownloadMavenPom(
     if (component.artifacts.any { it.name.endsWith(".pom") }) return null
     val pomRepos = repos.filter { "mavenPom" in it.metadataSources }
     if (pomRepos.isEmpty()) return null
-    val filename = with(component.id) { "$name-$version.pom" }
+    val filename = with(component.id) { "$module-$version.pom" }
 
     return maybeDownloadArtifact(logger, component.id, filename, pomRepos)?.let { artifact ->
         filename to ArtifactFile(
             urls = pomRepos.flatMap { repo ->
-                artifactUrls(component.id, filename, repo, gradleModule)
+                artifactUrls(logger, component.id, filename, repo, gradleModule)
             }.distinct(),
             hash = artifact.hash.toSri()
         )
@@ -215,28 +213,52 @@ private fun maybeDownloadIvyDescriptor(
     logger: Logger,
     component: Component,
     repos: List<Repository>,
-    gradleModule: GradleModule?
 ): Pair<String, ArtifactFile>? {
-    if (component.artifacts.any { it.name == "ivy.xml" }) return null
     val ivyRepos = repos.filter { "ivyDescriptor" in it.metadataSources }
     if (ivyRepos.isEmpty()) return null
-    return maybeDownloadArtifact(logger, component.id, "ivy.xml", ivyRepos)?.let { artifact ->
-        "ivy.xml" to ArtifactFile(
-            urls = ivyRepos.flatMap { repo ->
-                artifactUrls(component.id, "ivy.xml", repo, gradleModule)
-            }.distinct(),
-            hash = artifact.hash.toSri()
-        )
+
+    val urls = ivyRepos
+        .flatMap { repo ->
+            val attributes = attributes(component.id, repo)
+            repo.metadataResources.mapNotNull { fill(it, attributes).takeIf(::isUrlComplete) }
+        }
+        .filter { url ->
+            component.artifacts.none { url.substringAfterLast('/') == it.name }
+        }
+
+    var artifact: ArtifactDownload<String>? = null
+
+    for (url in urls) {
+        try {
+            val source = HashingSource.sha256(URL(url).openStream().source())
+            val text = source.buffer().readUtf8()
+            val hash = source.hash
+            artifact = ArtifactDownload(text, url, Sha256(hash.hex()))
+            break
+        } catch (e: IOException) {
+            // Pass
+        }
     }
+
+    if (artifact == null) {
+        logger.debug("ivy descriptor not found in urls: $urls")
+        return null
+    }
+    return artifact.artifact to ArtifactFile(
+        urls = urls,
+        hash = artifact.hash.toSri()
+    )
 }
 
 private fun maybeDownloadArtifact(
     logger: Logger,
-    id: ModuleVersionId,
+    id: DependencyCoordinates,
     filename: String,
     repos: List<Repository>
 ): ArtifactDownload<String>? {
-    val urls = repos.flatMap { artifactUrls(id, filename, it, null)}
+    val urls = repos.flatMap { artifactUrls(logger, id, filename, it, null)}
+
+    logger.debug("artifact $filename: $urls")
 
     for (url in urls) {
         try {
@@ -270,10 +292,11 @@ private fun Checksum.toSri(): String {
 }
 
 private fun artifactUrls(
-    id: ModuleVersionId,
+    logger: Logger,
+    id: DependencyCoordinates,
     filename: String,
     repository: Repository,
-    module: GradleModule?
+    module: GradleModule?,
 ): List<String> {
     val groupAsPath = id.group.replace(".", "/")
 
@@ -286,8 +309,8 @@ private fun artifactUrls(
 
     val attributes = mutableMapOf(
         "organisation" to if (repository.m2Compatible) groupAsPath else id.group,
-        "module" to id.name,
-        "revision" to id.version.toString(),
+        "module" to id.module,
+        "revision" to id.version,
     ) + fileAttributes(repoFilename, id.version)
 
     val resources = when (attributes["ext"]) {
@@ -299,7 +322,7 @@ private fun artifactUrls(
             repository.artifactResources
         }
         else -> repository.artifactResources
-    }
+    }.map { it.replaceFirst("-[revision]", "-${id.artifactVersion}") }
 
     val urls = mutableListOf<String>()
 
@@ -309,10 +332,12 @@ private fun artifactUrls(
         }
         if (location.none { it == '[' || it == ']' }) {
             urls.add(location)
+        } else {
+            logger.warn("failed to construct artifact URL: $location")
         }
     }
 
-    return urls
+    return urls.distinct()
 }
 
 private val optionalRegex = Regex("\\(([^)]+)\\)")
@@ -328,8 +353,16 @@ private fun fill(template: String, attributes: Map<String, String>): String {
     }
 }
 
+private fun isUrlComplete(url: String): Boolean = !url.contains("[")
+
+private fun attributes(id: DependencyCoordinates, repository: Repository): Map<String, String> = buildMap {
+    put("organisation", if (repository.m2Compatible) id.group.replace(".", "/") else id.group)
+    put("module", id.module)
+    put("revision", id.version)
+}
+
 // Gradle persists artifacts with the Maven artifact pattern, which may not match the repository's pattern.
-private fun fileAttributes(file: String, version: Version): Map<String, String> {
+private fun fileAttributes(file: String, version: String): Map<String, String> {
     val parts = Regex("(.+)-$version(-([^.]+))?(\\.(.+))?").matchEntire(file) ?: return emptyMap()
 
     val (artifact, _, classifier, _, ext) = parts.destructured
@@ -342,7 +375,7 @@ private fun fileAttributes(file: String, version: Version): Map<String, String> 
 }
 
 private data class MergedDependency(
-    val id: ModuleVersionId,
+    val id: DependencyCoordinates,
     val repositories: List<Repository>
 )
 
