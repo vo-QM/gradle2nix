@@ -7,10 +7,11 @@ plugins {
 }
 
 dependencies {
-    compileOnly(kotlin("stdlib-jdk8"))
-    compileOnly(kotlin("reflect"))
+    shadow(kotlin("stdlib-jdk8"))
+    shadow(kotlin("reflect"))
     implementation(project(":model"))
-    implementation(libs.serialization.json)
+    testImplementation(libs.kotest.assertions)
+    testImplementation(libs.kotest.runner)
 }
 
 java {
@@ -47,13 +48,18 @@ tasks {
     shadowJar {
         archiveClassifier.set("")
         relocate("kotlin", "${project.group}.shadow.kotlin")
-        relocate("kotlinx.serialization", "${project.group}.shadow.serialization")
-        relocate("net.swiftzer.semver", "${project.group}.shadow.semver")
         relocate("org.intellij", "${project.group}.shadow.intellij")
         relocate("org.jetbrains", "${project.group}.shadow.jetbrains")
     }
 
     validatePlugins {
         enableStricterValidation.set(true)
+    }
+
+    withType<Test> {
+        useJUnitPlatform()
+        testLogging {
+            events("passed", "skipped", "failed")
+        }
     }
 }

@@ -2,23 +2,48 @@
 
 package org.nixos.gradle2nix
 
+import javax.inject.Inject
 import org.gradle.api.Plugin
+import org.gradle.api.Project
 import org.gradle.api.invocation.Gradle
-import org.nixos.gradle2nix.dependencygraph.AbstractDependencyExtractorPlugin
+import org.gradle.tooling.provider.model.ToolingModelBuilder
+import org.gradle.tooling.provider.model.ToolingModelBuilderRegistry
+import org.nixos.gradle2nix.dependencygraph.DependencyExtractor
 import org.nixos.gradle2nix.forceresolve.ForceDependencyResolutionPlugin
+import org.nixos.gradle2nix.model.DependencySet
+import org.nixos.gradle2nix.util.buildOperationAncestryTracker
+import org.nixos.gradle2nix.util.buildOperationListenerManager
+import org.nixos.gradle2nix.util.service
 
-@Suppress("unused")
-class Gradle2NixPlugin : Plugin<Gradle> {
+abstract class Gradle2NixPlugin @Inject constructor(
+    private val toolingModelBuilderRegistry: ToolingModelBuilderRegistry
+): Plugin<Gradle> {
     override fun apply(gradle: Gradle) {
-        // Only apply the dependency extractor to the root build
-        if (gradle.parent == null) {
-            gradle.pluginManager.apply(NixDependencyExtractorPlugin::class.java)
+        val dependencyExtractor = DependencyExtractor(
+            gradle.buildOperationAncestryTracker,
+        )
+        toolingModelBuilderRegistry.register(DependencySetModelBuilder(dependencyExtractor))
+
+        gradle.buildOperationListenerManager.addListener(dependencyExtractor)
+
+        // Configuration caching is not enabled with dependency verification so this is fine for now.
+        // Gradle 9.x might remove this though.
+        @Suppress("DEPRECATION")
+        gradle.buildFinished {
+            gradle.buildOperationListenerManager.removeListener(dependencyExtractor)
         }
+
         gradle.pluginManager.apply(ForceDependencyResolutionPlugin::class.java)
     }
+}
 
-    class NixDependencyExtractorPlugin : AbstractDependencyExtractorPlugin() {
-        override fun getRendererClassName(): String =
-            NixDependencyGraphRenderer::class.java.name
+internal class DependencySetModelBuilder(
+    private val dependencyExtractor: DependencyExtractor,
+) : ToolingModelBuilder {
+
+    override fun canBuild(modelName: String): Boolean = modelName == DependencySet::class.qualifiedName
+
+    override fun buildAll(modelName: String, project: Project): DependencySet {
+        return dependencyExtractor.buildDependencySet()
     }
 }

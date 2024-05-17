@@ -23,9 +23,7 @@ class ForceDependencyResolutionPlugin : Plugin<Gradle> {
             gradle.allprojects { project ->
                 val projectTaskFactory = getResolveProjectDependenciesTaskFactory()
                 val resolveProjectDeps = projectTaskFactory.create(project)
-                resolveAllDeps.configure {
-                    it.dependsOn(resolveProjectDeps)
-                }
+                resolveAllDeps.configure { it.dependsOn(resolveProjectDeps) }
             }
 
             // Depend on all 'resolveBuildDependencies' task in each included build
@@ -51,7 +49,7 @@ class ForceDependencyResolutionPlugin : Plugin<Gradle> {
         fun create(project: Project): TaskProvider<out Task>
 
         data object Current : ResolveProjectDependenciesTaskFactory {
-            override fun create(project: Project): TaskProvider<out Task> {
+              override fun create(project: Project): TaskProvider<out Task> {
                 return project.tasks.register(RESOLVE_PROJECT_TASK, ResolveProjectDependenciesTask::class.java)
             }
         }

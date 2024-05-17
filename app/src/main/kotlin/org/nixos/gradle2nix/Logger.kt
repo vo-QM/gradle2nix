@@ -5,43 +5,44 @@ import kotlin.system.exitProcess
 
 class Logger(
     val out: PrintStream = System.err,
-    val verbose: Boolean,
-    val stacktrace: Boolean = false
+    val logLevel: LogLevel = LogLevel.warn,
+    val stacktrace: Boolean = false,
 ) {
 
     fun debug(message: String, error: Throwable? = null) {
-        if (!stacktrace) return
-        out.println(message)
-        if (error == null) return
-        error.message?.let { println("  Cause: $it") }
-        error.printStackTrace(out)
+        if (logLevel <= LogLevel.debug) {
+            out.println("[DEBUG] $message")
+            printError(error)
+        }
     }
 
-    fun log(message: String, error: Throwable? = null) {
-        if (!verbose) return
-        out.println(message)
-        if (error == null) return
-        error.message?.let { println("  Cause: $it") }
-        if (stacktrace) error.printStackTrace(out)
+    fun info(message: String, error: Throwable? = null) {
+        if (logLevel <= LogLevel.info) {
+            out.println("[INFO] $message")
+            printError(error)
+        }
     }
 
     fun warn(message: String, error: Throwable? = null) {
-        out.println("Warning: $message")
+        if (logLevel <= LogLevel.warn) {
+            out.println("[WARN] $message")
+            printError(error)
+        }
+    }
+
+    fun error(message: String, error: Throwable? = null): Nothing {
+        out.println("[ERROR] $message")
+        printError(error)
+        exitProcess(1)
+    }
+
+    private fun printError(error: Throwable?) {
         if (error == null) return
         error.message?.let { println("  Cause: $it") }
         if (stacktrace) error.printStackTrace(out)
     }
 
-    fun error(message: String, error: Throwable? = null): Nothing {
-        out.println("Error: $message")
-        if (error != null) {
-            error.message?.let { println("  Cause: $it") }
-            if (stacktrace) error.printStackTrace(out)
-        }
-        exitProcess(1)
-    }
-
-    operator fun component1() = ::log
+    operator fun component1() = ::info
     operator fun component2() = ::warn
     operator fun component3() = ::error
 }

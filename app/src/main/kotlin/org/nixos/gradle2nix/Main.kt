@@ -10,11 +10,16 @@ import com.github.ajalt.clikt.parameters.options.flag
 import com.github.ajalt.clikt.parameters.options.multiple
 import com.github.ajalt.clikt.parameters.options.option
 import com.github.ajalt.clikt.parameters.options.validate
+import com.github.ajalt.clikt.parameters.types.choice
+import com.github.ajalt.clikt.parameters.types.enum
 import com.github.ajalt.clikt.parameters.types.file
 import java.io.File
+import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.encodeToStream
+import org.gradle.tooling.model.gradle.GradleBuild
+import org.nixos.gradle2nix.model.DependencySet
 
 data class Config(
     val appHome: File,
@@ -22,11 +27,11 @@ data class Config(
     val gradleVersion: String?,
     val gradleJdk: File?,
     val gradleArgs: List<String>,
-    val projectFilter: String?,
-    val configurationFilter: String?,
+    val outDir: File,
     val projectDir: File,
     val tasks: List<String>,
     val logger: Logger,
+    val dumpEvents: Boolean
 )
 
 @OptIn(ExperimentalSerializationApi::class)
@@ -34,6 +39,13 @@ val JsonFormat = Json {
     ignoreUnknownKeys = true
     prettyPrint = true
     prettyPrintIndent = "  "
+}
+
+enum class LogLevel {
+    debug,
+    info,
+    warn,
+    error,
 }
 
 class Gradle2Nix : CliktCommand(
@@ -51,17 +63,6 @@ class Gradle2Nix : CliktCommand(
         help = "JDK home directory to use for launching Gradle (default: ${System.getProperty("java.home")})"
     ).file(canBeFile = false, canBeDir = true)
 
-    private val projectFilter: String? by option(
-        "--projects", "-p",
-        metavar = "REGEX",
-        help = "Regex to filter Gradle projects (default: include all projects)"
-    )
-
-    private val configurationFilter: String? by option(
-        "--configurations", "-c",
-        metavar = "REGEX",
-        help = "Regex to filter Gradle configurations (default: include all configurations)")
-
     val outDir: File? by option(
         "--out-dir", "-o",
         metavar = "DIR",
@@ -74,11 +75,12 @@ class Gradle2Nix : CliktCommand(
         help = "Prefix for environment files (.json and .nix)")
         .default("gradle-env")
 
-    private val debug: Boolean by option("--debug", help = "Enable debug logging")
-        .flag(default = false)
-
-    private val quiet: Boolean by option("--quiet", "-q", help = "Disable logging")
-        .flag(default = false)
+    private val logLevel: LogLevel by option(
+        "--log", "-l",
+        metavar = "LEVEL",
+        help = "Print messages with priority of at least LEVEL")
+        .enum<LogLevel>()
+        .default(LogLevel.error)
 
     private val projectDir: File by option(
         "--projectDir", "-d",
@@ -99,6 +101,16 @@ class Gradle2Nix : CliktCommand(
         help = "Gradle tasks to run"
     ).multiple()
 
+    private val dumpEvents: Boolean by option(
+        "--dump-events",
+        help = "Dump Gradle event logs to the output directory",
+    ).flag()
+
+    private val stacktrace: Boolean by option(
+        "--stacktrace",
+        help = "Print a stack trace on error"
+    ).flag()
+
     private val gradleArgs: List<String> by argument(
         name = "ARGS",
         help = "Extra arguments to pass to Gradle"
@@ -118,7 +130,7 @@ class Gradle2Nix : CliktCommand(
         }
         val gradleHome =
             System.getenv("GRADLE_USER_HOME")?.let(::File) ?: File("${System.getProperty("user.home")}/.gradle")
-        val logger = Logger(verbose = !quiet, stacktrace = debug)
+        val logger = Logger(logLevel = logLevel, stacktrace = stacktrace)
 
         val config = Config(
             File(appHome),
@@ -126,11 +138,11 @@ class Gradle2Nix : CliktCommand(
             gradleVersion,
             gradleJdk,
             gradleArgs,
-            projectFilter,
-            configurationFilter,
+            outDir ?: projectDir,
             projectDir,
             tasks,
-            logger
+            logger,
+            dumpEvents
         )
 
         val metadata = File("$projectDir/gradle/verification-metadata.xml")
@@ -146,19 +158,37 @@ class Gradle2Nix : CliktCommand(
             }
         }
 
+        val buildSrcs = connect(config).use { connection ->
+            val root = runBlocking { connection.buildModel() }
+            val builds: List<GradleBuild> = buildList {
+                add(root)
+                addAll(root.editableBuilds)
+            }
+            builds.mapNotNull { build ->
+                build.rootProject.projectDirectory.resolve("buildSrc").takeIf { it.exists() }
+            }
+        }
+
+        val dependencySets = mutableListOf<DependencySet>()
+
         connect(config).use { connection ->
-            connection.build(config)
+            dependencySets.add(runBlocking { connection.build(config) })
+        }
+
+        for (buildSrc in buildSrcs) {
+            connect(config, buildSrc).use { connection ->
+                dependencySets.add(runBlocking { connection.build(config) })
+            }
         }
 
         val env = try {
-            processDependencies(config)
+            processDependencies(config, dependencySets)
         } catch (e: Throwable) {
             logger.error("dependency parsing failed", e)
         }
 
-        val outDir = outDir ?: projectDir
-        val json = outDir.resolve("$envFile.json")
-        logger.log("Writing environment to $json")
+        val json = config.outDir.resolve("$envFile.json")
+        logger.info("Writing environment to $json")
         json.outputStream().buffered().use { output ->
             JsonFormat.encodeToStream(env, output)
         }

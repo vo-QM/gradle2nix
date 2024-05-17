@@ -10,6 +10,7 @@ import nl.adaptivity.xmlutil.serialization.XmlSerialName
 import nl.adaptivity.xmlutil.xmlStreaming
 import org.nixos.gradle2nix.Logger
 import org.nixos.gradle2nix.model.DependencyCoordinates
+import org.nixos.gradle2nix.model.impl.DefaultDependencyCoordinates
 
 sealed interface Coordinates {
     val group: String?
@@ -40,10 +41,10 @@ data class Configuration(
 
 @Serializable
 sealed interface Checksum {
-    abstract val value: String
-    abstract val origin: String?
-    abstract val reason: String?
-    abstract val alternatives: List<String>
+    val value: String
+    val origin: String?
+    val reason: String?
+    val alternatives: List<String>
 }
 
 @Serializable
@@ -107,11 +108,11 @@ data class Component(
     val timestamp: String? = null,
     val artifacts: List<Artifact> = emptyList(),
 ) {
-    val id: DependencyCoordinates get() = DependencyCoordinates(group, name, version, timestamp)
+    val id: DependencyCoordinates get() = DefaultDependencyCoordinates(group, name, version, timestamp)
 
     constructor(id: DependencyCoordinates, artifacts: List<Artifact>) : this(
         id.group,
-        id.module,
+        id.artifact,
         id.version,
         id.timestamp,
         artifacts

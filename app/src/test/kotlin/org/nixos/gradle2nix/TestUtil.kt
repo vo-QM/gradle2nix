@@ -1,20 +1,37 @@
 package org.nixos.gradle2nix
 
 import io.kotest.assertions.fail
+import io.kotest.assertions.withClue
 import io.kotest.common.ExperimentalKotest
 import io.kotest.common.KotestInternal
+import io.kotest.core.extensions.MountableExtension
+import io.kotest.core.listeners.AfterSpecListener
 import io.kotest.core.names.TestName
 import io.kotest.core.source.sourceRef
+import io.kotest.core.spec.Spec
 import io.kotest.core.test.NestedTest
 import io.kotest.core.test.TestScope
 import io.kotest.core.test.TestType
 import io.kotest.matchers.equals.beEqual
 import io.kotest.matchers.file.shouldBeAFile
+import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.should
+import io.kotest.matchers.shouldBe
+import io.ktor.http.ContentType
+import io.ktor.http.Url
+import io.ktor.server.engine.embeddedServer
+import io.ktor.server.http.content.staticFiles
+import io.ktor.server.netty.Netty
+import io.ktor.server.netty.NettyApplicationEngine
+import io.ktor.server.routing.routing
 import java.io.File
 import java.io.FileFilter
 import java.nio.file.Files
 import java.nio.file.Paths
+import kotlin.random.Random
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.encodeToString
@@ -23,6 +40,7 @@ import kotlinx.serialization.json.decodeFromStream
 import kotlinx.serialization.json.encodeToStream
 import okio.use
 import org.nixos.gradle2nix.env.Env
+import org.nixos.gradle2nix.metadata.parseVerificationMetadata
 
 private val app = Gradle2Nix()
 
@@ -32,7 +50,7 @@ private val json = Json {
     prettyPrintIndent = "  "
 }
 
-val testLogger = Logger(verbose = true, stacktrace = true)
+val testLogger = Logger(logLevel = LogLevel.debug, stacktrace = true)
 
 fun fixture(path: String): File {
     return Paths.get("../fixtures", path).toFile()
@@ -42,10 +60,10 @@ fun fixture(path: String): File {
 suspend fun TestScope.fixture(
     project: String,
     vararg args: String,
-    test: suspend TestScope.(Env) -> Unit
+    test: suspend TestScope.(File, Env) -> Unit
 ) {
     val tmp = Paths.get("build/tmp/gradle2nix").apply { toFile().mkdirs() }
-    val baseDir = Paths.get("../fixtures", project).toFile()
+    val baseDir = Paths.get("../fixtures/projects", project).toFile()
     val children = baseDir.listFiles(FileFilter { it.isDirectory && (it.name == "groovy" || it.name == "kotlin") })
         ?.toList()
     val cases = if (children.isNullOrEmpty()) {
@@ -73,13 +91,22 @@ suspend fun TestScope.fixture(
                 if (!tempDir.resolve("settings.gradle").exists() && !tempDir.resolve("settings.gradle.kts").exists()) {
                     Files.createFile(tempDir.resolve("settings.gradle").toPath())
                 }
-                app.main(listOf("-d", tempDir.toString()) + listOf("--debug") + args.withM2() + "-Dorg.gradle.internal.operations.trace=${tempDir.resolve("build").absolutePath}")
+                app.main(
+                    listOf(
+                        "-d", tempDir.toString(),
+                        "--log", "debug",
+                        "--stacktrace",
+                        "--dump-events",
+                        "--",
+                        "-Dorg.nixos.gradle2nix.m2=$m2"
+                    ) + args
+                )
                 val file = tempDir.resolve("${app.envFile}.json")
                 file.shouldBeAFile()
                 val env: Env = file.inputStream().buffered().use { input ->
                     Json.decodeFromStream(input)
                 }
-                test(env)
+                test(tempDir, env)
             }
         )
     }
@@ -92,7 +119,7 @@ suspend fun TestScope.golden(
     project: String,
     vararg args: String,
 ) {
-    fixture(project, *args) { env ->
+    fixture(project, *args) { dir, env ->
         val filename = "${testCase.name.testName}.json"
         val goldenFile = File("../fixtures/golden/$filename")
         if (updateGolden) {
@@ -111,14 +138,83 @@ suspend fun TestScope.golden(
             }
             json.encodeToString(env) should beEqual(goldenData)
         }
+
+        val metadata = parseVerificationMetadata(
+            testLogger,
+            dir.resolve("gradle/verification-metadata.xml")
+        )!!
+
+        for (component in metadata.components) {
+            val componentId = component.id.id
+
+            withClue("env should contain component $componentId") {
+                env[componentId].shouldNotBeNull()
+            }
+        }
     }
 }
 
-val m2 = System.getProperty("org.nixos.gradle2nix.m2")
+val m2: String = requireNotNull(System.getProperty("org.nixos.gradle2nix.m2"))
 
-private fun Array<out String>.withM2(): List<String> {
-    val args = toMutableList()
-    if (args.indexOf("--") < 0) args.add("--")
-    args.add("-Dorg.nixos.gradle2nix.m2=$m2")
-    return args
+object MavenRepo : MountableExtension<MavenRepo.Config, NettyApplicationEngine>, AfterSpecListener {
+    class Config {
+        var repository: File = File("../fixtures/repositories/m2")
+        var path: String = ""
+        var port: Int? = null
+        var host: String = DEFAULT_HOST
+    }
+
+    const val DEFAULT_HOST = "0.0.0.0"
+
+    private val coroutineScope = CoroutineScope(Dispatchers.Default)
+    private var server: NettyApplicationEngine? = null
+    private val config = Config()
+
+    init {
+        require(config.repository.exists()) {
+            "test repository doesn't exist: ${config.repository}"
+        }
+        val m2Url = Url(m2)
+        config.path = m2Url.encodedPath
+        config.host = m2Url.host
+        config.port = m2Url.port
+    }
+
+    override fun mount(configure: Config.() -> Unit): NettyApplicationEngine {
+        config.configure()
+        // try 3 times to find a port if random
+        return tryStart(3).also { this.server = it }
+    }
+
+    private fun tryStart(attempts: Int): NettyApplicationEngine {
+        return try {
+            val p = config.port ?: Random.nextInt(10000, 65000)
+            val s = embeddedServer(Netty, port = p, host = config.host) {
+                routing {
+                    staticFiles(
+                        remotePath = config.path,
+                        dir = config.repository,
+                        index = null,
+                    ) {
+                        enableAutoHeadResponse()
+                        contentType { path ->
+                            when (path.extension) {
+                                "pom", "xml" -> ContentType.Text.Xml
+                                "jar" -> ContentType("application", "java-archive")
+                                else -> ContentType.Text.Plain
+                            }
+                        }
+                    }
+                }
+            }
+            coroutineScope.launch { s.start(wait = true) }
+            s
+        } catch (e: Throwable) {
+            if (config.port == null && attempts > 0) tryStart(attempts - 1) else throw e
+        }
+    }
+
+    override suspend fun afterSpec(spec: Spec) {
+        server?.stop()
+    }
 }

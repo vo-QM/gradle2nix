@@ -1,31 +1,31 @@
 package org.nixos.gradle2nix.forceresolve
 
-import org.gradle.api.DefaultTask
-import org.gradle.api.artifacts.Configuration
-import org.gradle.api.artifacts.result.ResolvedComponentResult
-import org.gradle.api.provider.Provider
+import javax.inject.Inject
+import org.gradle.api.artifacts.component.ModuleComponentIdentifier
+import org.gradle.api.file.FileCollection
+import org.gradle.api.model.ObjectFactory
 import org.gradle.api.tasks.TaskAction
 import org.gradle.internal.serialization.Cached
 import org.gradle.work.DisableCachingByDefault
 
 @DisableCachingByDefault(because = "Not worth caching")
-abstract class ResolveProjectDependenciesTask: DefaultTask() {
-    private val configurationResolvers = Cached.of { createConfigurationResolvers() }
+abstract class ResolveProjectDependenciesTask @Inject constructor(
+    private val objects: ObjectFactory
+): AbstractResolveProjectDependenciesTask() {
+    private val artifactFiles = Cached.of { artifactFiles() }
 
-    private fun createConfigurationResolvers(): List<Provider<ResolvedComponentResult>> {
-        return getReportableConfigurations().map {
-            it.incoming.resolutionResult.rootComponent
-        }
-    }
-
-    private fun getReportableConfigurations(): List<Configuration> {
-        return project.configurations.filter { it.isCanBeResolved }
+    private fun artifactFiles(): FileCollection {
+        return objects.fileCollection().from(
+            getReportableConfigurations().map { configuration ->
+                configuration.incoming.artifactView { viewConfiguration ->
+                    viewConfiguration.componentFilter { it is ModuleComponentIdentifier }
+                }.files
+            }
+        )
     }
 
     @TaskAction
     fun action() {
-        for (configuration in configurationResolvers.get()) {
-            configuration.get()
-        }
+        artifactFiles.get().count()
     }
 }

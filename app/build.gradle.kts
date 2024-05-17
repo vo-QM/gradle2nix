@@ -4,26 +4,28 @@ plugins {
     application
 }
 
-configurations {
-    register("share")
-}
+configurations.register("share")
 
 dependencies {
-    implementation(kotlin("reflect"))
     implementation(project(":model"))
     implementation(libs.clikt)
     implementation(libs.gradle.toolingApi)
+    implementation(libs.kotlinx.coroutines.core)
+    implementation(libs.okio)
     implementation(libs.serialization.json)
     implementation(libs.slf4j.api)
     runtimeOnly(libs.slf4j.simple)
-    implementation(libs.okio)
     implementation(libs.xmlutil)
 
-    "share"(project(":plugin", configuration = "shadow"))
+    "share"(project(":plugin", configuration = "shadow")) {
+        isTransitive = false
+    }
 
-    testRuntimeOnly(kotlin("reflect"))
+    //testRuntimeOnly(kotlin("reflect"))
     testImplementation(libs.kotest.assertions)
     testImplementation(libs.kotest.runner)
+    testImplementation(libs.ktor.server.core)
+    testImplementation(libs.ktor.server.netty)
 }
 
 application {
@@ -34,10 +36,6 @@ application {
         .from(configurations.named("share"))
         .into("share")
         .rename("plugin.*\\.jar", "plugin.jar")
-}
-
-kotlin {
-    jvmToolchain(11)
 }
 
 sourceSets {
@@ -80,7 +78,7 @@ tasks {
             }
             systemProperties(
                 "org.nixos.gradle2nix.share" to installDist.get().destinationDir.resolve("share"),
-                "org.nixos.gradle2nix.m2" to rootDir.resolve("fixtures/repositories/m2").toURI().toString()
+                "org.nixos.gradle2nix.m2" to "http://0.0.0.0:8989/m2"
             )
         }
         useJUnitPlatform()

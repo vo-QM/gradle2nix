@@ -1,12 +1,8 @@
 package org.nixos.gradle2nix.model
 
-import kotlinx.serialization.Serializable
+import java.io.Serializable
 
-@Serializable
-data class ResolvedDependency(
-    val id: DependencyCoordinates,
-    val source: DependencySource,
-    val direct: Boolean,
-    val repository: String?,
-    val dependencies: List<String> = emptyList(),
-)
+interface ResolvedDependency : Serializable {
+    val coordinates: DependencyCoordinates
+    val artifacts: List<ResolvedArtifact>
+}

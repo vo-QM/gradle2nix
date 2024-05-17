@@ -1,6 +1,7 @@
 [versions]
-gradle = "8.5"
-kotlin = "1.9.21"
+gradle = "8.7"
+kotlin = "1.9.22"
+ktor = "2.3.11"
 
 [libraries]
 clikt = "com.github.ajalt:clikt:+"
@@ -11,8 +12,11 @@ junit-jupiter-params = "org.junit.jupiter:junit-jupiter-params:+"
 junit-platformLauncher = "org.junit.platform:junit-platform-launcher:+"
 kotest-runner = "io.kotest:kotest-runner-junit5:+"
 kotest-assertions = "io.kotest:kotest-assertions-core:+"
+kotlinx-coroutines-core = "org.jetbrains.kotlinx:kotlinx-coroutines-core:+"
+ktor-server-core = { module = "io.ktor:ktor-server-core", version.ref = "ktor" }
+ktor-server-netty = { module = "io.ktor:ktor-server-netty", version.ref = "ktor" }
 okio = "com.squareup.okio:okio:+"
-serialization-json = "org.jetbrains.kotlinx:kotlinx-serialization-json:+"
+serialization-json = "org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3"
 slf4j-api = "org.slf4j:slf4j-api:+"
 slf4j-simple = "org.slf4j:slf4j-simple:+"
 xmlutil = "io.github.pdvrieze.xmlutil:serialization-jvm:+"

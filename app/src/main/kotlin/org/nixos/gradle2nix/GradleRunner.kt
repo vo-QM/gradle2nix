@@ -1,53 +1,93 @@
 package org.nixos.gradle2nix
 
+import java.io.File
+import kotlin.coroutines.resume
+import kotlin.coroutines.resumeWithException
+import kotlin.io.path.absolutePathString
+import kotlinx.coroutines.suspendCancellableCoroutine
+import org.gradle.tooling.GradleConnectionException
 import org.gradle.tooling.GradleConnector
 import org.gradle.tooling.ProjectConnection
-import org.nixos.gradle2nix.model.PARAM_INCLUDE_CONFIGURATIONS
-import org.nixos.gradle2nix.model.PARAM_INCLUDE_PROJECTS
+import org.gradle.tooling.ResultHandler
+import org.gradle.tooling.model.gradle.GradleBuild
+import org.nixos.gradle2nix.model.DependencySet
 import org.nixos.gradle2nix.model.RESOLVE_ALL_TASK
 
-fun connect(config: Config): ProjectConnection =
+fun connect(config: Config, projectDir: File = config.projectDir): ProjectConnection =
     GradleConnector.newConnector()
         .apply {
             if (config.gradleVersion != null) {
                 useGradleVersion(config.gradleVersion)
             }
         }
-        .forProjectDirectory(config.projectDir)
+        .forProjectDirectory(projectDir)
         .connect()
 
-fun ProjectConnection.build(
-    config: Config,
-) {
-    newBuild()
+suspend fun ProjectConnection.buildModel(): GradleBuild = suspendCancellableCoroutine { continuation ->
+    val cancellationTokenSource = GradleConnector.newCancellationTokenSource()
+
+    continuation.invokeOnCancellation { cancellationTokenSource.cancel() }
+
+    action { controller -> controller.buildModel }
+        .withCancellationToken(cancellationTokenSource.token())
+        .run(object : ResultHandler<GradleBuild> {
+            override fun onComplete(result: GradleBuild) {
+                continuation.resume(result)
+            }
+
+            override fun onFailure(failure: GradleConnectionException) {
+                continuation.resumeWithException(failure)
+            }
+        })
+}
+
+suspend fun ProjectConnection.build(config: Config): DependencySet = suspendCancellableCoroutine { continuation ->
+    val cancellationTokenSource = GradleConnector.newCancellationTokenSource()
+
+    continuation.invokeOnCancellation { cancellationTokenSource.cancel() }
+
+    action { controller -> controller.getModel(DependencySet::class.java) }
+        .withCancellationToken(cancellationTokenSource.token())
         .apply {
             if (config.tasks.isNotEmpty()) {
                 forTasks(*config.tasks.toTypedArray())
             } else {
                 forTasks(RESOLVE_ALL_TASK)
             }
-            if (config.gradleJdk != null) {
-                setJavaHome(config.gradleJdk)
-            }
-            addArguments(config.gradleArgs)
-            addArguments(
-                "--gradle-user-home=${config.gradleHome}",
-                "--init-script=${config.appHome}/init.gradle",
-                "--write-verification-metadata", "sha256"
-            )
-            if (config.projectFilter != null) {
-                addArguments("-D$PARAM_INCLUDE_PROJECTS")
-            }
-            if (config.configurationFilter != null) {
-                addArguments("-D$PARAM_INCLUDE_CONFIGURATIONS")
-            }
-            if (config.logger.verbose) {
-                setStandardOutput(System.err)
-                setStandardError(System.err)
-            }
+        }
+        .setJavaHome(config.gradleJdk)
+        .addArguments(config.gradleArgs)
+        .addArguments(
+            "--no-parallel",
+            "--refresh-dependencies",
+            "--gradle-user-home=${config.gradleHome}",
+            "--init-script=${config.appHome}/init.gradle",
+            "--write-verification-metadata", "sha256"
+        )
+        .apply {
             if (config.logger.stacktrace) {
                 addArguments("--stacktrace")
             }
+            if (config.logger.logLevel <= LogLevel.debug) {
+                setStandardOutput(System.err)
+                setStandardError(System.err)
+            }
+            if (config.dumpEvents) {
+                withSystemProperties(
+                    mapOf(
+                        "org.gradle.internal.operations.trace" to
+                                config.outDir.toPath().resolve("debug").absolutePathString()
+                    )
+                )
+            }
         }
-        .run()
+        .run(object : ResultHandler<DependencySet> {
+            override fun onComplete(result: DependencySet) {
+                continuation.resume(result)
+            }
+
+            override fun onFailure(failure: GradleConnectionException) {
+                continuation.resumeWithException(failure)
+            }
+        })
 }

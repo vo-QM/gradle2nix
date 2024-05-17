@@ -1,62 +1,33 @@
 package org.nixos.gradle2nix.model
 
-import kotlinx.serialization.KSerializer
-import kotlinx.serialization.Serializable
-import kotlinx.serialization.descriptors.PrimitiveKind
-import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
-import kotlinx.serialization.descriptors.SerialDescriptor
-import kotlinx.serialization.encoding.Decoder
-import kotlinx.serialization.encoding.Encoder
+import java.io.Serializable
 
-@Serializable(DependencyCoordinates.Serializer::class)
-data class DependencyCoordinates(
-    val group: String,
-    val module: String,
-    val version: String,
-    val timestamp: String? = null
-) : Comparable<DependencyCoordinates> {
+interface DependencyCoordinates : Serializable {
+    val group: String
+    val artifact: String
 
-    override fun toString(): String = if (timestamp != null) {
-        "$group:$module:$version:$timestamp"
+    /**
+     * For normal dependencies, the dependency version (e.g. "2.0.2").
+     *
+     * For Maven snapshot dependencies, the snapshot version (e.g. "2.0.2-SNAPSHOT").
+     */
+    val version: String
+
+    /**
+     * For Maven snapshot dependencies, the snapshot timestamp (e.g. "20070310.18163-3").
+     *
+     * For normal dependencies, this is null.
+     */
+    val timestamp: String?
+
+    val id: String get() = if (timestamp != null) {
+        "$group:$artifact:$version:$timestamp"
     } else {
-        "$group:$module:$version"
+        "$group:$artifact:$version"
     }
 
-    val artifactVersion: String get() =
-        timestamp?.let { version.replace("SNAPSHOT", it) } ?: version
+    val timestampedCoordinates: DependencyCoordinates
 
-    override fun compareTo(other: DependencyCoordinates): Int = comparator.compare(this, other)
-
-    object Serializer : KSerializer<DependencyCoordinates> {
-        override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor(
-            DependencyCoordinates::class.qualifiedName!!,
-            PrimitiveKind.STRING
-        )
-
-        override fun deserialize(decoder: Decoder): DependencyCoordinates {
-            val encoded = decoder.decodeString()
-            return parse(encoded)
-        }
-
-        override fun serialize(encoder: Encoder, value: DependencyCoordinates) {
-            encoder.encodeString(value.toString())
-        }
-    }
-
-    companion object {
-        val comparator = compareBy<DependencyCoordinates> { it.group }
-            .thenBy { it.module }
-            .thenByDescending { it.artifactVersion }
-
-        fun parse(id: String): DependencyCoordinates {
-            val parts = id.split(":")
-            return when (parts.size) {
-                3 -> DependencyCoordinates(parts[0], parts[1], parts[2])
-                4 -> DependencyCoordinates(parts[0], parts[1], parts[2], parts[3])
-                else -> throw IllegalStateException(
-                    "couldn't parse dependency coordinates: '$id'"
-                )
-            }
-        }
-    }
+    val timestampedVersion: String get() =
+        timestamp?.let { version.replace("-SNAPSHOT", "-$it") } ?: version
 }

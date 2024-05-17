@@ -1,16 +1,9 @@
 package org.nixos.gradle2nix.model
 
-import kotlinx.serialization.Serializable
+import java.io.Serializable
 
-@Serializable
-data class ResolvedArtifact(
-    val type: Type?,
-    val file: String,
-) {
-    enum class Type {
-        SOURCES,
-        JAVADOC,
-        IVY_DESCRIPTOR,
-        MAVEN_POM,
-    }
+interface ResolvedArtifact : Serializable {
+    val name: String
+    val filename: String
+    val urls: List<String>
 }

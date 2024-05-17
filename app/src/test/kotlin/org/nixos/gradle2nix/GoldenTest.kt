@@ -1,8 +1,11 @@
 package org.nixos.gradle2nix
 
+import io.kotest.core.extensions.install
 import io.kotest.core.spec.style.FunSpec
 
 class GoldenTest : FunSpec({
+    install(MavenRepo)
+
     context("basic") {
         golden("basic/basic-java-project")
         golden("basic/basic-kotlin-project")

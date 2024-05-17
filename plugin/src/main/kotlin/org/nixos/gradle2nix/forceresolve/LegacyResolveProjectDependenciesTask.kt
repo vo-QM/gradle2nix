@@ -6,11 +6,7 @@ import org.gradle.api.tasks.TaskAction
 import org.gradle.work.DisableCachingByDefault
 
 @DisableCachingByDefault(because = "Not worth caching")
-abstract class LegacyResolveProjectDependenciesTask: DefaultTask() {
-    private fun getReportableConfigurations(): List<Configuration> {
-        return project.configurations.filter { it.isCanBeResolved }
-    }
-
+abstract class LegacyResolveProjectDependenciesTask : AbstractResolveProjectDependenciesTask() {
     @TaskAction
     fun action() {
         for (configuration in getReportableConfigurations()) {
