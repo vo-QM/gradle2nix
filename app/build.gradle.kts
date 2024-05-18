@@ -21,7 +21,6 @@ dependencies {
         isTransitive = false
     }
 
-    //testRuntimeOnly(kotlin("reflect"))
     testImplementation(libs.kotest.assertions)
     testImplementation(libs.kotest.runner)
     testImplementation(libs.ktor.server.core)

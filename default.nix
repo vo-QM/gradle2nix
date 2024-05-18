@@ -3,10 +3,12 @@
 with pkgs;
 
 let
-  buildGradle = callPackage ./gradle-env.nix {};
+  buildGradle = callPackage ./gradle.nix {};
 
   gradle2nix = buildGradle {
-    envSpec = ./gradle-env.json;
+    pname = "gradle2nix";
+    version = "2.0.0";
+    lockFile = ./gradle.lock;
 
     src = lib.cleanSourceWith {
       filter = lib.cleanSourceFilter;
@@ -35,7 +37,4 @@ let
     };
   };
 
-in buildGradle {
-  envSpec = ./gradle-env.json;
-  pname = "gradle2nix";
-}
+in gradle2nix

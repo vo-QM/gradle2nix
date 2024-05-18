@@ -2,7 +2,7 @@ package org.nixos.gradle2nix
 
 import com.github.ajalt.clikt.core.CliktCommand
 import com.github.ajalt.clikt.core.context
-import com.github.ajalt.clikt.output.CliktHelpFormatter
+import com.github.ajalt.clikt.output.MordantHelpFormatter
 import com.github.ajalt.clikt.parameters.arguments.argument
 import com.github.ajalt.clikt.parameters.arguments.multiple
 import com.github.ajalt.clikt.parameters.options.default
@@ -10,7 +10,6 @@ import com.github.ajalt.clikt.parameters.options.flag
 import com.github.ajalt.clikt.parameters.options.multiple
 import com.github.ajalt.clikt.parameters.options.option
 import com.github.ajalt.clikt.parameters.options.validate
-import com.github.ajalt.clikt.parameters.types.choice
 import com.github.ajalt.clikt.parameters.types.enum
 import com.github.ajalt.clikt.parameters.types.file
 import java.io.File
@@ -69,14 +68,20 @@ class Gradle2Nix : CliktCommand(
         help = "Path to write generated files (default: PROJECT-DIR)")
         .file(canBeFile = false, canBeDir = true)
 
-    val envFile: String by option(
-        "--env", "-e",
+    val lockFile: String by option(
+        "--lock-file", "-l",
         metavar = "FILENAME",
-        help = "Prefix for environment files (.json and .nix)")
-        .default("gradle-env")
+        help = "Name of the generated lock file"
+    ).default("gradle.lock")
+
+    val nixFile: String by option(
+        "--nix-file", "-n",
+        metavar = "FILENAME",
+        help = "Name of the generated Nix file"
+    ).default("gradle.nix")
 
     private val logLevel: LogLevel by option(
-        "--log", "-l",
+        "--log",
         metavar = "LEVEL",
         help = "Print messages with priority of at least LEVEL")
         .enum<LogLevel>()
@@ -118,22 +123,20 @@ class Gradle2Nix : CliktCommand(
 
     init {
         context {
-            helpFormatter = CliktHelpFormatter(showDefaultValues = true)
+            helpFormatter = { MordantHelpFormatter(it, showDefaultValues = true) }
         }
     }
 
     @OptIn(ExperimentalSerializationApi::class)
     override fun run() {
-        val appHome = System.getProperty("org.nixos.gradle2nix.share")
-        if (appHome == null) {
-            System.err.println("Error: could not locate the /share directory in the gradle2nix installation")
-        }
-        val gradleHome =
-            System.getenv("GRADLE_USER_HOME")?.let(::File) ?: File("${System.getProperty("user.home")}/.gradle")
         val logger = Logger(logLevel = logLevel, stacktrace = stacktrace)
 
+        val appHome = System.getProperty("org.nixos.gradle2nix.share")?.let(::File)
+            ?: error("could not locate the /share directory in the gradle2nix installation")
+        val gradleHome =
+            System.getenv("GRADLE_USER_HOME")?.let(::File) ?: File("${System.getProperty("user.home")}/.gradle")
         val config = Config(
-            File(appHome),
+            appHome,
             gradleHome,
             gradleVersion,
             gradleJdk,
@@ -156,6 +159,8 @@ class Gradle2Nix : CliktCommand(
             } else {
                 metadata.deleteOnExit()
             }
+        } else {
+            metadata.deleteOnExit()
         }
 
         val buildSrcs = connect(config).use { connection ->
@@ -187,11 +192,19 @@ class Gradle2Nix : CliktCommand(
             logger.error("dependency parsing failed", e)
         }
 
-        val json = config.outDir.resolve("$envFile.json")
-        logger.info("Writing environment to $json")
-        json.outputStream().buffered().use { output ->
+        config.outDir.mkdirs()
+
+        val outLockFile = config.outDir.resolve(lockFile)
+        logger.info("Writing lock file to $outLockFile")
+        outLockFile.outputStream().buffered().use { output ->
             JsonFormat.encodeToStream(env, output)
         }
+
+        val inNixFile = config.appHome.resolve("gradle.nix").takeIf { it.exists() }
+            ?: error("Couldn't locate gradle.nix in the the gradle2nix installation: ${config.appHome}")
+        val outNixFile = config.outDir.resolve(nixFile)
+        logger.info("Writing Nix builder to $outNixFile")
+        inNixFile.copyTo(outNixFile, overwrite = true)
     }
 }
 
