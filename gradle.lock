@@ -52,6 +52,12 @@
     }
   },
   "com.github.ajalt.clikt:clikt:4.4.0": {
+    "clikt-4.4.0.jar": {
+      "urls": [
+        "https://repo.maven.apache.org/maven2/com/github/ajalt/clikt/clikt/4.4.0/clikt-4.4.0.jar"
+      ],
+      "hash": "sha256-pGJRQhCAqew0Cm92KHhUIOuyx9Ccw7BVOZ+j+676doY="
+    },
     "clikt-4.4.0.module": {
       "urls": [
         "https://repo.maven.apache.org/maven2/com/github/ajalt/clikt/clikt/4.4.0/clikt-4.4.0.module"
@@ -86,6 +92,12 @@
     }
   },
   "com.github.ajalt.colormath:colormath:3.5.0": {
+    "colormath-3.5.0.jar": {
+      "urls": [
+        "https://repo.maven.apache.org/maven2/com/github/ajalt/colormath/colormath/3.5.0/colormath-3.5.0.jar"
+      ],
+      "hash": "sha256-vSKbrzuv1VbRid5yRx2dF8KaofXTJEVgJwvvjmOiMZo="
+    },
     "colormath-3.5.0.module": {
       "urls": [
         "https://repo.maven.apache.org/maven2/com/github/ajalt/colormath/colormath/3.5.0/colormath-3.5.0.module"
@@ -120,6 +132,12 @@
     }
   },
   "com.github.ajalt.mordant:mordant:2.5.0": {
+    "mordant-2.5.0.jar": {
+      "urls": [
+        "https://repo.maven.apache.org/maven2/com/github/ajalt/mordant/mordant/2.5.0/mordant-2.5.0.jar"
+      ],
+      "hash": "sha256-j80uWaxhZQy8d7paxqDaZlMD6xvVURejzZSpi+ir0xM="
+    },
     "mordant-2.5.0.module": {
       "urls": [
         "https://repo.maven.apache.org/maven2/com/github/ajalt/mordant/mordant/2.5.0/mordant-2.5.0.module"
@@ -3199,50 +3217,40 @@
       "hash": "sha256-x+nvk73YqzYwMs5TgvzGTQAtbFicF1IzI2zSmOUaPBY="
     }
   },
-  "org.slf4j:slf4j-api:2.1.0-alpha1": {
-    "slf4j-api-2.1.0-alpha1.jar": {
+  "org.slf4j:slf4j-api:1.7.36": {
+    "slf4j-api-1.7.36.jar": {
       "urls": [
-        "https://repo.maven.apache.org/maven2/org/slf4j/slf4j-api/2.1.0-alpha1/slf4j-api-2.1.0-alpha1.jar"
+        "https://repo.maven.apache.org/maven2/org/slf4j/slf4j-api/1.7.36/slf4j-api-1.7.36.jar"
       ],
-      "hash": "sha256-mrf/pkYgK0mdBZlaPsgvMbzLelA0XBUU2MtC7IzOo1M="
+      "hash": "sha256-0+9XXj5JeWeNwBvx3M5RAhSTtNEft/G+itmCh3wWocA="
     },
-    "slf4j-api-2.1.0-alpha1.pom": {
+    "slf4j-api-1.7.36.pom": {
       "urls": [
-        "https://repo.gradle.org/gradle/libs-releases/org/slf4j/slf4j-api/2.1.0-alpha1/slf4j-api-2.1.0-alpha1.pom",
-        "https://repo.maven.apache.org/maven2/org/slf4j/slf4j-api/2.1.0-alpha1/slf4j-api-2.1.0-alpha1.pom"
+        "https://repo.maven.apache.org/maven2/org/slf4j/slf4j-api/1.7.36/slf4j-api-1.7.36.pom"
       ],
-      "hash": "sha256-QirqW+u6gwWzxhT6Zo7SKePJYQkw7PQvhzOO4F4minU="
+      "hash": "sha256-+wRqnCKUN5KLsRwtJ8i113PriiXmDL0lPZhSEN7cJoQ="
     }
   },
-  "org.slf4j:slf4j-bom:2.1.0-alpha1": {
-    "slf4j-bom-2.1.0-alpha1.pom": {
+  "org.slf4j:slf4j-parent:1.7.36": {
+    "slf4j-parent-1.7.36.pom": {
       "urls": [
-        "https://repo.maven.apache.org/maven2/org/slf4j/slf4j-bom/2.1.0-alpha1/slf4j-bom-2.1.0-alpha1.pom"
+        "https://repo.maven.apache.org/maven2/org/slf4j/slf4j-parent/1.7.36/slf4j-parent-1.7.36.pom"
       ],
-      "hash": "sha256-qOgTiZePRAcJJBuYPTHvp4cRO+EbgYwsa82e0wlv1IU="
+      "hash": "sha256-uziNN/vN083mTDzt4hg4aTIY3EUfBAQMXfNgp47X6BI="
     }
   },
-  "org.slf4j:slf4j-parent:2.1.0-alpha1": {
-    "slf4j-parent-2.1.0-alpha1.pom": {
+  "org.slf4j:slf4j-simple:1.7.36": {
+    "slf4j-simple-1.7.36.jar": {
       "urls": [
-        "https://repo.maven.apache.org/maven2/org/slf4j/slf4j-parent/2.1.0-alpha1/slf4j-parent-2.1.0-alpha1.pom"
+        "https://repo.maven.apache.org/maven2/org/slf4j/slf4j-simple/1.7.36/slf4j-simple-1.7.36.jar"
       ],
-      "hash": "sha256-zkc1sfnIId4Lkrjb5AsHHG6jIHMuWTVZxupt+WX4c48="
-    }
-  },
-  "org.slf4j:slf4j-simple:2.1.0-alpha1": {
-    "slf4j-simple-2.1.0-alpha1.jar": {
-      "urls": [
-        "https://repo.maven.apache.org/maven2/org/slf4j/slf4j-simple/2.1.0-alpha1/slf4j-simple-2.1.0-alpha1.jar"
-      ],
-      "hash": "sha256-AU/trHoyKI7W+PcqEAfn+zKuxb/tsnFGfkluCVNIL3U="
+      "hash": "sha256-Lzm+2UPWJN+o9BAtBXEoOhCHC2qjbxl6ilBvFHAQwQ8="
     },
-    "slf4j-simple-2.1.0-alpha1.pom": {
+    "slf4j-simple-1.7.36.pom": {
       "urls": [
-        "https://repo.gradle.org/gradle/libs-releases/org/slf4j/slf4j-simple/2.1.0-alpha1/slf4j-simple-2.1.0-alpha1.pom",
-        "https://repo.maven.apache.org/maven2/org/slf4j/slf4j-simple/2.1.0-alpha1/slf4j-simple-2.1.0-alpha1.pom"
+        "https://repo.maven.apache.org/maven2/org/slf4j/slf4j-simple/1.7.36/slf4j-simple-1.7.36.pom"
       ],
-      "hash": "sha256-RgReG+EA94JLUITh83eCxoBJcEeKRXPejEmgfQOpSGM="
+      "hash": "sha256-xWuAoKa+oqBGPnDQiSrjOKnlB+SGdnpSBFNAmBIFjRs="
     }
   },
   "org.sonatype.oss:oss-parent:9": {

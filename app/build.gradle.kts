@@ -13,7 +13,6 @@ dependencies {
     implementation(libs.kotlinx.coroutines.core)
     implementation(libs.okio)
     implementation(libs.serialization.json)
-    implementation(libs.slf4j.api)
     runtimeOnly(libs.slf4j.simple)
     implementation(libs.xmlutil)
 
@@ -30,7 +29,10 @@ dependencies {
 application {
     mainClass.set("org.nixos.gradle2nix.MainKt")
     applicationName = "gradle2nix"
-    applicationDefaultJvmArgs += "-Dorg.nixos.gradle2nix.share=@APP_HOME@/share"
+    applicationDefaultJvmArgs = listOf(
+        "-Dorg.nixos.gradle2nix.share=@APP_HOME@/share",
+        "-Dslf4j.internal.verbosity=ERROR"
+    )
     applicationDistribution
         .from(configurations.named("share"))
         .into("share")
@@ -58,13 +60,10 @@ tasks {
     startScripts {
         doLast {
             unixScript.writeText(
-                unixScript.readText()
-                    .replace("@APP_HOME@", "\\\"\$APP_HOME\\\"")
-                    .replace(Regex("DEFAULT_JVM_OPTS=\'(.*)\'")) { match ->
-                        "DEFAULT_JVM_OPTS=${match.groupValues[1]}"
-                    }
+                unixScript.readText().replace("@APP_HOME@", "'\$APP_HOME'")
             )
-            windowsScript.writeText(windowsScript.readText().replace("@APP_HOME@", "%APP_HOME%"))
+            windowsScript.writeText(
+                windowsScript.readText().replace("@APP_HOME@", "%APP_HOME%"))
         }
     }
 

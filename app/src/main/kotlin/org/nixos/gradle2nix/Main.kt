@@ -6,6 +6,7 @@ import com.github.ajalt.clikt.output.MordantHelpFormatter
 import com.github.ajalt.clikt.parameters.arguments.argument
 import com.github.ajalt.clikt.parameters.arguments.multiple
 import com.github.ajalt.clikt.parameters.options.default
+import com.github.ajalt.clikt.parameters.options.defaultLazy
 import com.github.ajalt.clikt.parameters.options.flag
 import com.github.ajalt.clikt.parameters.options.multiple
 import com.github.ajalt.clikt.parameters.options.option
@@ -50,6 +51,43 @@ enum class LogLevel {
 class Gradle2Nix : CliktCommand(
     name = "gradle2nix"
 ) {
+    private val tasks: List<String> by option(
+        "--task", "-t",
+        metavar = "TASK",
+        help = "Gradle tasks to run"
+    ).multiple()
+
+    private val projectDir: File by option(
+        "--project", "-p",
+        help = "Path to the project root")
+        .file()
+        .default(File("."), "Current directory")
+        .validate { file ->
+            if (!file.exists()) fail("Directory \"$file\" does not exist.")
+            if (file.isFile) fail("Directory \"$file\" is a file.")
+            if (!file.canRead()) fail("Directory \"$file\" is not readable.")
+            if (!file.isProjectRoot()) fail("Directory \"$file\" is not a Gradle project.")
+        }
+
+    private val outDir: File? by option(
+        "--out-dir", "-o",
+        metavar = "DIR",
+        help = "Path to write generated files")
+        .file(canBeFile = false, canBeDir = true)
+        .defaultLazy("<project>") { projectDir }
+
+    private val lockFile: String by option(
+        "--lock-file", "-l",
+        metavar = "FILENAME",
+        help = "Name of the generated lock file"
+    ).default("gradle.lock")
+
+    private val nixFile: String by option(
+        "--nix-file", "-n",
+        metavar = "FILENAME",
+        help = "Name of the generated Nix file"
+    ).default("gradle.nix")
+
     private val gradleVersion: String? by option(
         "--gradle-version", "-g",
         metavar = "VERSION",
@@ -62,49 +100,11 @@ class Gradle2Nix : CliktCommand(
         help = "JDK home directory to use for launching Gradle (default: ${System.getProperty("java.home")})"
     ).file(canBeFile = false, canBeDir = true)
 
-    val outDir: File? by option(
-        "--out-dir", "-o",
-        metavar = "DIR",
-        help = "Path to write generated files (default: PROJECT-DIR)")
-        .file(canBeFile = false, canBeDir = true)
-
-    val lockFile: String by option(
-        "--lock-file", "-l",
-        metavar = "FILENAME",
-        help = "Name of the generated lock file"
-    ).default("gradle.lock")
-
-    val nixFile: String by option(
-        "--nix-file", "-n",
-        metavar = "FILENAME",
-        help = "Name of the generated Nix file"
-    ).default("gradle.nix")
-
     private val logLevel: LogLevel by option(
         "--log",
-        metavar = "LEVEL",
-        help = "Print messages with priority of at least LEVEL")
+        help = "Print messages with this priority or higher")
         .enum<LogLevel>()
         .default(LogLevel.error)
-
-    private val projectDir: File by option(
-        "--projectDir", "-d",
-        metavar = "PROJECT-DIR",
-        help = "Path to the project root (default: .)")
-        .file()
-        .default(File("."), "Current directory")
-        .validate { file ->
-            if (!file.exists()) fail("Directory \"$file\" does not exist.")
-            if (file.isFile) fail("Directory \"$file\" is a file.")
-            if (!file.canRead()) fail("Directory \"$file\" is not readable.")
-            if (!file.isProjectRoot()) fail("Directory \"$file\" is not a Gradle project.")
-        }
-
-    private val tasks: List<String> by option(
-        "--tasks", "-t",
-        metavar = "TASKS",
-        help = "Gradle tasks to run"
-    ).multiple()
 
     private val dumpEvents: Boolean by option(
         "--dump-events",
@@ -132,7 +132,7 @@ class Gradle2Nix : CliktCommand(
         val logger = Logger(logLevel = logLevel, stacktrace = stacktrace)
 
         val appHome = System.getProperty("org.nixos.gradle2nix.share")?.let(::File)
-            ?: error("could not locate the /share directory in the gradle2nix installation")
+            ?: error("could not locate the /share directory in the gradle2nix installation: ${System.getenv("APP_HOME")}")
         val gradleHome =
             System.getenv("GRADLE_USER_HOME")?.let(::File) ?: File("${System.getProperty("user.home")}/.gradle")
         val config = Config(
