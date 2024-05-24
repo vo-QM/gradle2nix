@@ -34,7 +34,7 @@ application {
         "-Dslf4j.internal.verbosity=ERROR"
     )
     applicationDistribution
-        .from(configurations.named("share"))
+        .from(configurations.named("share"), files("../gradle.nix"))
         .into("share")
         .rename("plugin.*\\.jar", "plugin.jar")
 }

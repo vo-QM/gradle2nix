@@ -33,7 +33,17 @@ let
     '';
 
     passthru = {
+      build = buildGradle;
       plugin = "${gradle2nix}/share/plugin.jar";
+    };
+
+    meta = with lib; {
+      inherit (gradle.meta) platforms;
+      description = "Wrap Gradle builds with Nix";
+      homepage = "https://github.com/tadfisher/gradle2nix";
+      license = licenses.asl20;
+      maintainers = with maintainers; [ tadfisher ];
+      mainProgram = "gradle2nix";
     };
   };
 
