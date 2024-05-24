@@ -95,18 +95,25 @@ nix run github:tadfisher/gradle2nix -- --help
 #+begin_example
 Usage: gradle2nix [<options>] [<args>]...
 
+Gradle installation:
+
+  Where to find Gradle. By default, use the project's wrapper.
+
+  --gradle-dist=<uri>       Gradle distribution URI
+  --gradle-home=<dir>       Gradle home path (e.g. `nix eval nixpkgs#gradle.outPath`/lib/gradle)
+  --gradle-wrapper=<value>  Gradle wrapper version
+
 Options:
-  -t, --tasks=<tasks>             Gradle tasks to run
-  -p, --project=<project-dir>     Path to the project root (default: Current directory)
-  -o, --out-dir=<dir>             Path to write generated files (default: <project>)
-  -l, --lock-file=<filename>      Name of the generated lock file (default: gradle.lock)
-  -n, --nix-file=<filename>       Name of the generated Nix file (default: gradle.nix)
-  -g, --gradle-version=<version>  Use a specific Gradle version
-  -j, --gradle-jdk=<dir>          JDK home directory to use for launching Gradle (default: JAVA_HOME)
-  --log=(debug|info|warn|error)   Print messages with this priority or higher (default: error)
-  --dump-events                   Dump Gradle event logs to the output directory
-  --stacktrace                    Print a stack trace on error
-  -h, --help                      Show this message and exit
+  -t, --task=<task>              Gradle tasks to run
+  -p, --project=<path>           Path to the project root (default: Current directory)
+  -o, --out-dir=<dir>            Path to write generated files (default: <project>)
+  -l, --lock-file=<filename>     Name of the generated lock file (default: gradle.lock)
+  -n, --nix-file=<filename>      Name of the generated Nix file (default: gradle.nix)
+  -j, --gradle-jdk=<dir>         JDK home to use for launching Gradle (e.g. nix eval nixpkgs#openjdk.home)
+  --log=(debug|info|warn|error)  Print messages with this priority or higher (default: error)
+  --dump-events                  Dump Gradle event logs to the output directory
+  --stacktrace                   Print a stack trace on error
+  -h, --help                     Show this message and exit
 
 Arguments:
   <args>  Extra arguments to pass to Gradle
@@ -137,16 +144,21 @@ gradle2nix -t :app:installDist
 /Note:/ This may be *required* if the build resolves configurations
 at execution time.
 
-*** Specifying the Gradle version
+*** Specifying the Gradle installation
 
-By default, if the project has configured the Gradle wrapper, that
-version will be detected and pinned; otherwise, the version of Gradle
-installed on your system will be pinned. You can override this with
-the =--gradle-version= argument, which also avoids the need to have
-Gradle installed.
+By default, if the project has configured the Gradle wrapper, it will
+be used; otherwise, the version of Gradle used to build gradle2nix
+will be used. You can override this to use any of the following:
 
 #+begin_example
-gradle2nix -g 6.1
+# Gradle distribution URL:
+gradle2nix --gradle-dist='https://services.gradle.org/distributions/gradle-8.7-bin.zip'
+
+# Path to a local Gradle installation:
+gradle2nix --gradle-home=`nix eval nixpkgs#gradle.outPath`/lib/gradle
+
+# A specific wrapper version:
+gradle2nix --gradle-wrapper=8.7
 #+end_example
 
 ** Contributing

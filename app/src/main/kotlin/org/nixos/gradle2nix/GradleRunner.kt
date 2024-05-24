@@ -16,8 +16,11 @@ import org.nixos.gradle2nix.model.RESOLVE_ALL_TASK
 fun connect(config: Config, projectDir: File = config.projectDir): ProjectConnection =
     GradleConnector.newConnector()
         .apply {
-            if (config.gradleVersion != null) {
-                useGradleVersion(config.gradleVersion)
+            when (val source = config.gradleSource) {
+                is GradleSource.Distribution -> useDistribution(source.uri)
+                is GradleSource.Path -> useInstallation(source.path)
+                GradleSource.Project -> useBuildDistribution()
+                is GradleSource.Wrapper -> useGradleVersion(source.version)
             }
         }
         .forProjectDirectory(projectDir)

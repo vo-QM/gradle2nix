@@ -5,26 +5,33 @@ import com.github.ajalt.clikt.core.context
 import com.github.ajalt.clikt.output.MordantHelpFormatter
 import com.github.ajalt.clikt.parameters.arguments.argument
 import com.github.ajalt.clikt.parameters.arguments.multiple
+import com.github.ajalt.clikt.parameters.groups.default
+import com.github.ajalt.clikt.parameters.groups.mutuallyExclusiveOptions
+import com.github.ajalt.clikt.parameters.groups.single
+import com.github.ajalt.clikt.parameters.options.convert
 import com.github.ajalt.clikt.parameters.options.default
 import com.github.ajalt.clikt.parameters.options.defaultLazy
 import com.github.ajalt.clikt.parameters.options.flag
 import com.github.ajalt.clikt.parameters.options.multiple
 import com.github.ajalt.clikt.parameters.options.option
+import com.github.ajalt.clikt.parameters.options.optionalValue
 import com.github.ajalt.clikt.parameters.options.validate
 import com.github.ajalt.clikt.parameters.types.enum
 import com.github.ajalt.clikt.parameters.types.file
 import java.io.File
+import java.net.URI
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.encodeToStream
+import org.gradle.internal.service.scopes.Scopes.Gradle
 import org.gradle.tooling.model.gradle.GradleBuild
 import org.nixos.gradle2nix.model.DependencySet
 
 data class Config(
     val appHome: File,
     val gradleHome: File,
-    val gradleVersion: String?,
+    val gradleSource: GradleSource,
     val gradleJdk: File?,
     val gradleArgs: List<String>,
     val outDir: File,
@@ -41,6 +48,13 @@ val JsonFormat = Json {
     prettyPrintIndent = "  "
 }
 
+sealed interface GradleSource {
+    data class Distribution(val uri: URI) : GradleSource
+    data class Path(val path: File) : GradleSource
+    data object Project : GradleSource
+    data class Wrapper(val version: String) : GradleSource
+}
+
 enum class LogLevel {
     debug,
     info,
@@ -49,7 +63,7 @@ enum class LogLevel {
 }
 
 class Gradle2Nix : CliktCommand(
-    name = "gradle2nix"
+    name = "gradle2nix",
 ) {
     private val tasks: List<String> by option(
         "--task", "-t",
@@ -88,16 +102,29 @@ class Gradle2Nix : CliktCommand(
         help = "Name of the generated Nix file"
     ).default("gradle.nix")
 
-    private val gradleVersion: String? by option(
-        "--gradle-version", "-g",
-        metavar = "VERSION",
-        help = "Use a specific Gradle version"
-    )
+    private val gradleSource: GradleSource by mutuallyExclusiveOptions(
+        option(
+            "--gradle-dist",
+            metavar = "URI",
+            help = "Gradle distribution URI"
+        ).convert { GradleSource.Distribution(URI(it)) },
+        option(
+            "--gradle-home",
+            metavar = "DIR",
+            help = "Gradle home path (e.g. \\`nix eval nixpkgs#gradle.outPath\\`/lib/gradle)"
+        ).file(mustExist = true, canBeFile = false).convert { GradleSource.Path(it) },
+        option(
+            "--gradle-wrapper",
+            help = "Gradle wrapper version"
+        ).convert { GradleSource.Wrapper(it) },
+        name = "Gradle installation",
+        help = "Where to find Gradle. By default, use the project's wrapper."
+    ).single().default(GradleSource.Project)
 
     private val gradleJdk: File? by option(
         "--gradle-jdk", "-j",
         metavar = "DIR",
-        help = "JDK home directory to use for launching Gradle (default: ${System.getProperty("java.home")})"
+        help = "JDK home to use for launching Gradle (e.g. `nix eval nixpkgs#openjdk.home`)",
     ).file(canBeFile = false, canBeDir = true)
 
     private val logLevel: LogLevel by option(
@@ -138,7 +165,7 @@ class Gradle2Nix : CliktCommand(
         val config = Config(
             appHome,
             gradleHome,
-            gradleVersion,
+            gradleSource,
             gradleJdk,
             gradleArgs,
             outDir ?: projectDir,
