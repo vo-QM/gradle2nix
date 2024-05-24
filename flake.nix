@@ -12,6 +12,8 @@
         pkgs = nixpkgs.legacyPackages.${system};
 
       in {
+        builders.default = pkgs.callPackage ./gradle.nix {};
+
         packages.default = pkgs.callPackage ./default.nix {};
 
         apps.default = {

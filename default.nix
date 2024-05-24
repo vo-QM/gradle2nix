@@ -3,9 +3,9 @@
 with pkgs;
 
 let
-  buildGradle = callPackage ./gradle.nix {};
+  buildGradlePackage = callPackage ./gradle.nix {};
 
-  gradle2nix = buildGradle {
+  gradle2nix = buildGradlePackage {
     pname = "gradle2nix";
     version = "2.0.0";
     lockFile = ./gradle.lock;
@@ -33,7 +33,7 @@ let
     '';
 
     passthru = {
-      build = buildGradle;
+      inherit buildGradlePackage;
       plugin = "${gradle2nix}/share/plugin.jar";
     };
 

@@ -280,7 +280,7 @@ let
       '';
 
 
-  buildGradle = stdenv.mkDerivation (finalAttrs: {
+  buildGradlePackage = stdenv.mkDerivation (finalAttrs: {
 
     inherit buildJdk enableParallelBuilding enableDebug gradle gradleFlags pname version;
 
@@ -328,4 +328,4 @@ let
   ]);
 
 in
-buildGradle
+buildGradlePackage
