@@ -11,16 +11,13 @@
     flake-utils.lib.eachDefaultSystem (system:
       let
         pkgs = nixpkgs.legacyPackages.${system};
-        buildGradle = pkgs.callPackage ./gradle.nix {};
 
       in {
-        packages.default = pkgs.callPackage ./gradle2nix.nix {
-          inherit buildGradle;
-        };
+        packages.default = pkgs.callPackage ./gradle2nix.nix {};
 
         apps.default = {
           type = "app";
-          program = "${self.packages.gradle2nix}/bin/gradle2nix";
+          program = "${self.packages.${system}.default}/bin/gradle2nix";
         };
       });
 }

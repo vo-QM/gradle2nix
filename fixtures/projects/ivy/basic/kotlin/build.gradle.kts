@@ -8,7 +8,6 @@ repositories {
         patternLayout {
             ivy("ivy2/[organisation]/[module]/[revision]/ivy(.[platform]).xml")
             artifact("artifact/[organisation]/[module]/[revision](/[platform])(/[type]s)/[artifact]-[revision](-[classifier]).[ext]")
-
         }
     }
 }

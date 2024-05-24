@@ -11,17 +11,22 @@ import org.gradle.tooling.provider.model.ToolingModelBuilderRegistry
 import org.nixos.gradle2nix.dependencygraph.DependencyExtractor
 import org.nixos.gradle2nix.forceresolve.ForceDependencyResolutionPlugin
 import org.nixos.gradle2nix.model.DependencySet
-import org.nixos.gradle2nix.util.buildOperationAncestryTracker
+import org.nixos.gradle2nix.util.artifactCachesProvider
 import org.nixos.gradle2nix.util.buildOperationListenerManager
-import org.nixos.gradle2nix.util.service
+import org.nixos.gradle2nix.util.checksumService
+import org.nixos.gradle2nix.util.fileStoreAndIndexProvider
 
 abstract class Gradle2NixPlugin @Inject constructor(
     private val toolingModelBuilderRegistry: ToolingModelBuilderRegistry
 ): Plugin<Gradle> {
+
     override fun apply(gradle: Gradle) {
         val dependencyExtractor = DependencyExtractor(
-            gradle.buildOperationAncestryTracker,
+            gradle.artifactCachesProvider,
+            gradle.checksumService,
+            gradle.fileStoreAndIndexProvider,
         )
+
         toolingModelBuilderRegistry.register(DependencySetModelBuilder(dependencyExtractor))
 
         gradle.buildOperationListenerManager.addListener(dependencyExtractor)

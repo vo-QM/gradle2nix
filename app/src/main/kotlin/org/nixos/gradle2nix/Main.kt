@@ -76,7 +76,7 @@ class Gradle2Nix : CliktCommand(
         .file(canBeFile = false, canBeDir = true)
         .defaultLazy("<project>") { projectDir }
 
-    private val lockFile: String by option(
+    internal val lockFile: String by option(
         "--lock-file", "-l",
         metavar = "FILENAME",
         help = "Name of the generated lock file"

@@ -62,13 +62,12 @@ suspend fun ProjectConnection.build(config: Config): DependencySet = suspendCanc
             "--refresh-dependencies",
             "--gradle-user-home=${config.gradleHome}",
             "--init-script=${config.appHome}/init.gradle",
-            "--write-verification-metadata", "sha256"
         )
         .apply {
             if (config.logger.stacktrace) {
                 addArguments("--stacktrace")
             }
-            if (config.logger.logLevel <= LogLevel.debug) {
+            if (config.logger.logLevel < LogLevel.error) {
                 setStandardOutput(System.err)
                 setStandardError(System.err)
             }

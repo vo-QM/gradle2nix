@@ -4,6 +4,6 @@ import java.io.Serializable
 
 interface ResolvedArtifact : Serializable {
     val name: String
-    val filename: String
-    val urls: List<String>
+    val hash: String
+    val url: String
 }

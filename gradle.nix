@@ -119,14 +119,12 @@ let
   # Fetch urls using the scheme for the first entry only; there isn't a
   # straightforward way to tell Nix to try multiple fetchers in turn
   # and short-circuit on the first successful fetch.
-  fetch = name: { urls, hash }:
+  fetch = name: { url, hash }:
     let
-      first = head urls;
-      scheme = head (builtins.match "([a-z0-9+.-]+)://.*" first);
+      scheme = head (builtins.match "([a-z0-9+.-]+)://.*" url);
       fetch' = getAttr scheme fetchers';
-      urls' = filter (hasPrefix scheme) urls;
     in
-      fetch' { urls = urls'; inherit hash; };
+      fetch' { inherit url hash; };
 
   mkModule = id: artifacts:
     let

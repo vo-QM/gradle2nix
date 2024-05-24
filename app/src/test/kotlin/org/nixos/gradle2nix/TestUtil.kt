@@ -1,7 +1,6 @@
 package org.nixos.gradle2nix
 
 import io.kotest.assertions.fail
-import io.kotest.assertions.withClue
 import io.kotest.common.ExperimentalKotest
 import io.kotest.common.KotestInternal
 import io.kotest.core.extensions.MountableExtension
@@ -14,9 +13,7 @@ import io.kotest.core.test.TestScope
 import io.kotest.core.test.TestType
 import io.kotest.matchers.equals.beEqual
 import io.kotest.matchers.file.shouldBeAFile
-import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.should
-import io.kotest.matchers.shouldBe
 import io.ktor.http.ContentType
 import io.ktor.http.Url
 import io.ktor.server.engine.embeddedServer
@@ -39,8 +36,6 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.decodeFromStream
 import kotlinx.serialization.json.encodeToStream
 import okio.use
-import org.nixos.gradle2nix.env.Env
-import org.nixos.gradle2nix.metadata.parseVerificationMetadata
 
 private val app = Gradle2Nix()
 
@@ -93,15 +88,16 @@ suspend fun TestScope.fixture(
                 }
                 app.main(
                     listOf(
-                        "-d", tempDir.toString(),
+                        "-p", tempDir.toString(),
                         "--log", "debug",
                         "--stacktrace",
                         "--dump-events",
                         "--",
-                        "-Dorg.nixos.gradle2nix.m2=$m2"
+                        "-Dorg.nixos.gradle2nix.m2=$m2",
+                        "--info"
                     ) + args
                 )
-                val file = tempDir.resolve("${app.envFile}.json")
+                val file = tempDir.resolve(app.lockFile)
                 file.shouldBeAFile()
                 val env: Env = file.inputStream().buffered().use { input ->
                     Json.decodeFromStream(input)
@@ -137,19 +133,6 @@ suspend fun TestScope.golden(
                 fail("Failed to load golden data from '$filename'. Run with --update-golden to regenerate.")
             }
             json.encodeToString(env) should beEqual(goldenData)
-        }
-
-        val metadata = parseVerificationMetadata(
-            testLogger,
-            dir.resolve("gradle/verification-metadata.xml")
-        )!!
-
-        for (component in metadata.components) {
-            val componentId = component.id.id
-
-            withClue("env should contain component $componentId") {
-                env[componentId].shouldNotBeNull()
-            }
         }
     }
 }

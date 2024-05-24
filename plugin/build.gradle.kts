@@ -10,6 +10,7 @@ dependencies {
     shadow(kotlin("stdlib-jdk8"))
     shadow(kotlin("reflect"))
     implementation(project(":model"))
+    implementation(libs.serialization.json)
     testImplementation(libs.kotest.assertions)
     testImplementation(libs.kotest.runner)
 }

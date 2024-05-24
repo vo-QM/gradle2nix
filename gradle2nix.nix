@@ -1,8 +1,13 @@
 { lib
+, callPackage
 , gradle
-, buildGradle
 }:
 
+let
+  buildGradle = callPackage ./gradle.nix {
+    inherit gradle;
+  };
+in
 buildGradle {
   pname = "gradle2nix";
   version = "2.0.0";
