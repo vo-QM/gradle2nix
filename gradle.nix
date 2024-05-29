@@ -214,71 +214,52 @@ let
     paths = finalDependencies;
   };
 
-  initScript =
-    let
-      inSettings = pred: script:
-        optionalString pred (
-          if versionAtLeast gradle.version "6.0" then ''
-            gradle.beforeSettings {
-              ${script}
-            }
-          '' else ''
-            gradle.settingsEvaluated {
-              ${script}
-            }
-          ''
-        );
-    in
-      writeText "init.gradle" ''
-        static def offlineRepo(RepositoryHandler repositories) {
-            repositories.clear()
-            repositories.mavenLocal {
-                url 'file:${offlineRepo}'
-                metadataSources {
+  initScript = writeText "init.gradle" ''
+    import org.gradle.util.GradleVersion
+
+    static boolean versionAtLeast(String version) {
+        return GradleVersion.current() >= GradleVersion.version(version)
+    }
+
+    static void configureRepos(RepositoryHandler repositories) {
+        repositories.configureEach { ArtifactRepository repo ->
+            if (repo instanceof MavenArtifactRepository) {
+                repo.setArtifactUrls(new HashSet<URI>())
+                repo.url 'file:${offlineRepo}'
+                repo.metadataSources {
                     gradleMetadata()
                     mavenPom()
                     artifact()
                 }
+            } else if (repo instanceof IvyArtifactRepository) {
+                repo.url 'file:${offlineRepo}'
+                repo.layout('maven')
+                repo.metadataSources {
+                    gradleMetadata()
+                    ivyDescriptor()
+                    artifact()
+                }
+            } else if (repo instanceof UrlArtifactRepository) {
+                repo.url 'file:/homeless-shelter'
             }
         }
+    }
 
-        ${inSettings (versionAtLeast gradle.version "6.0") ''
-          offlineRepo(it.buildscript.repositories)
-        ''}
-
-        ${inSettings true ''
-            offlineRepo(it.pluginManagement.repositories)
-        ''}
-
-        gradle.projectsLoaded {
-            allprojects {
-                buildscript {
-                    offlineRepo(repositories)
-                }
-            }
+    beforeSettings { settings ->
+        configureRepos(settings.pluginManagement.repositories)
+        configureRepos(settings.buildscript.repositories)
+        if (versionAtLeast("6.8")) {
+            configureRepos(settings.dependencyResolutionManagement.repositories)
         }
+    }
 
-        ${if versionAtLeast gradle.version "6.8"
-          then ''
-            gradle.beforeSettings {
-                it.dependencyResolutionManagement {
-                    offlineRepo(repositories)
-                    repositoriesMode.set(RepositoriesMode.PREFER_SETTINGS)
-                }
-            }
-          ''
-          else ''
-            gradle.projectsLoaded {
-                allprojects {
-                    offlineRepo(repositories)
-                }
-            }
-          ''
-        }
+    beforeProject { project ->
+        configureRepos(project.buildscript.repositories)
+        configureRepos(project.repositories)
+    }
 
-        ${extraInit}
-      '';
-
+    ${extraInit}
+  '';
 
   buildGradlePackage = stdenv.mkDerivation (finalAttrs: {
 
@@ -295,6 +276,8 @@ let
       (
       set -eux
 
+      export NIX_OFFLINE_REPO='${offlineRepo}'
+
       ${optionalString (versionOlder finalAttrs.gradle.version "8.0") ''
         # Work around https://github.com/gradle/gradle/issues/1055
         TMPHOME="$(mktemp -d)"
@@ -303,7 +286,7 @@ let
         cp ${initScript} $TMPHOME/
       ''}
 
-      gradle --offline --no-daemon --no-build-cache \
+      gradle --offline --no-daemon --no-build-cache --no-watch-fs \
         --info --full-stacktrace --warning-mode=all \
         --no-configuration-cache --console=plain \
         -Dmaven.repo.local=${offlineRepo} \
