@@ -4,6 +4,19 @@
 
 Generate [[https://nixos.org/nix/][Nix]] expressions which build [[https://gradle.org/][Gradle]]-based projects.
 
+** Table of contents
+
+#+BEGIN_QUOTE
+- [[#why][Why?]]
+- [[#installation][Installation]]
+  - [[#flake][Flake]]
+- [[#usage][Usage]]
+  - [[#for-packagers][For packagers]]
+  - [[#specifying-the-gradle-installation][Specifying the Gradle installation]]
+- [[#contributing][Contributing]]
+- [[#license][License]]
+#+END_QUOTE
+
 ** Why?
 
 Nix is an OS-agnostic package manager, a language-agnostic build
@@ -80,7 +93,25 @@ nix-env -if "https://github.com/tadfisher/gradle2nix/archive/master.tar.gz"
 =gradle2nix= is not yet packaged in =nixpkgs= itself, but work is
 [[https://github.com/NixOS/nixpkgs/pull/77422][in progress]].
 
-*** Flake (experimental)
+The [[./gradle.nix][buildGradlePackage]] function is provided via the
+=gradle2nix.passthru.buildGradlePackage= attribute.
+
+#+begin_src nix
+{ pkgs ? import <nixpkgs> {} }:
+
+let
+  gradle2nix = import (fetchTarball "https://github.com/tadfisher/gradle2nix/archive/master.tar.gz")  {}
+in
+gradle2nix.buildGradlePackage {
+  pname = "my-package";
+  version = "1.0";
+  lockFile = ./gradle.lock;
+  gradleFlags = [ "installDist" ];
+  # ...
+}
+#+end_src
+
+*** Flake
 
 A [[./flake.nix][flake.nix]] is provided for those using [[https://nixos.wiki/wiki/Flakes][Nix flakes]]. For example, the
 following will build and run =gradle2nix= with the arguments provided
@@ -89,6 +120,26 @@ after =--=:
 #+begin_example
 nix run github:tadfisher/gradle2nix -- --help
 #+end_example
+
+The [[./gradle.nix][buildGradlePackage]] function is provided via the
+=builders= output.
+
+#+begin_src nix
+{
+  inputs.gradle2nix.url = "github:tadfisher/gradle2nix";
+
+  outputs = { self, gradle2nix }: {
+
+    packages.x86_64-linux.default = gradle2nix.builders.x86_64-linux.buildGradlePackage {
+      pname = "my-package";
+      version = "1.0";
+      lockFile = ./gradle.lock;
+      gradleFlags = [ "installDist" ];
+      # ...
+    };
+  };
+}
+#+end_src
 
 ** Usage
 
@@ -100,7 +151,7 @@ Gradle installation:
   Where to find Gradle. By default, use the project's wrapper.
 
   --gradle-dist=<uri>       Gradle distribution URI
-  --gradle-home=<dir>       Gradle home path (e.g. `nix eval nixpkgs#gradle.outPath`/lib/gradle)
+  --gradle-home=<dir>       Gradle home path (e.g. `nix eval --raw nixpkgs#gradle.outPath`/lib/gradle)
   --gradle-wrapper=<value>  Gradle wrapper version
 
 Options:
@@ -108,9 +159,8 @@ Options:
   -p, --project=<path>           Path to the project root (default: Current directory)
   -o, --out-dir=<dir>            Path to write generated files (default: <project>)
   -l, --lock-file=<filename>     Name of the generated lock file (default: gradle.lock)
-  -n, --nix-file=<filename>      Name of the generated Nix file (default: gradle.nix)
-  -j, --gradle-jdk=<dir>         JDK home to use for launching Gradle (e.g. nix eval nixpkgs#openjdk.home)
-  --log=(debug|info|warn|error)  Print messages with this priority or higher (default: error)
+  -j, --gradle-jdk=<dir>         JDK home to use for launching Gradle (e.g. `nix eval --raw nixpkgs#openjdk.home`)
+  --log=(debug|info|warn|error)  Print messages with this priority or higher (default: info)
   --dump-events                  Dump Gradle event logs to the output directory
   --stacktrace                   Print a stack trace on error
   -h, --help                     Show this message and exit
@@ -169,8 +219,8 @@ Bug reports and feature requests are encouraged.
 
 Code contributions are also encouraged. Please review the test cases
 in the [[./fixtures][fixtures]] directory and create a new one to reproduce any fixes
-or test new features. See the [[./plugin/src/compatTest/kotlin/org/nixos/gradle2nix][existing compatibility tests]] for
-examples of testing with these fixtures.
+or test new features. See the [[./app/src/test/kotlin/org/nixos/gradle2nix/GoldenTest.kt][existing tests]]
+for examples of testing with these fixtures.
 
 ** License
 

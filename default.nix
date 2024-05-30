@@ -1,9 +1,11 @@
-{ pkgs ? import <nixpkgs> {} }:
+{
+  pkgs ? import <nixpkgs> { },
+}:
 
 with pkgs;
 
 let
-  buildGradlePackage = callPackage ./gradle.nix {};
+  buildGradlePackage = callPackage ./gradle.nix { };
 
   gradle2nix = buildGradlePackage {
     pname = "gradle2nix";
@@ -13,14 +15,15 @@ let
     src = lib.cleanSourceWith {
       filter = lib.cleanSourceFilter;
       src = lib.cleanSourceWith {
-        filter = path: type: let baseName = baseNameOf path; in !(
-          (type == "directory" && (
-            baseName == "build" ||
-            baseName == ".idea" ||
-            baseName == ".gradle"
-          )) ||
-          (lib.hasSuffix ".iml" baseName)
-        );
+        filter =
+          path: type:
+          let
+            baseName = baseNameOf path;
+          in
+          !(
+            (type == "directory" && (baseName == "build" || baseName == ".idea" || baseName == ".gradle"))
+            || (lib.hasSuffix ".iml" baseName)
+          );
         src = ./.;
       };
     };
@@ -28,13 +31,14 @@ let
     gradleFlags = [ "installDist" ];
 
     installPhase = ''
-      mkdir -p $out
-      cp -r app/build/install/gradle2nix/* $out/
+      mkdir -p $out/{bin,/lib/gradle2nix}
+      cp -r app/build/install/gradle2nix/* $out/lib/gradle2nix/
+      rm $out/lib/gradle2nix/bin/gradle2nix.bat
+      ln -sf $out/lib/gradle2nix/bin/gradle2nix $out/bin
     '';
 
     passthru = {
       inherit buildGradlePackage;
-      plugin = "${gradle2nix}/share/plugin.jar";
     };
 
     meta = with lib; {
@@ -46,5 +50,5 @@ let
       mainProgram = "gradle2nix";
     };
   };
-
-in gradle2nix
+in
+gradle2nix

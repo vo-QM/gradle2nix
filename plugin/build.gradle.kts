@@ -1,4 +1,5 @@
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import org.jetbrains.kotlin.gradle.dsl.KotlinVersion
 
 plugins {
     id("org.jetbrains.kotlin.jvm")
@@ -11,8 +12,6 @@ dependencies {
     shadow(kotlin("reflect"))
     implementation(project(":model"))
     implementation(libs.serialization.json)
-    testImplementation(libs.kotest.assertions)
-    testImplementation(libs.kotest.runner)
 }
 
 java {
@@ -22,7 +21,10 @@ java {
 
 kotlin {
     compilerOptions {
+        apiVersion.set(KotlinVersion.KOTLIN_1_6)
+        languageVersion.set(KotlinVersion.KOTLIN_1_6)
         jvmTarget.set(JvmTarget.JVM_1_8)
+        optIn.add("kotlin.RequiresOptIn")
     }
 }
 
@@ -55,12 +57,5 @@ tasks {
 
     validatePlugins {
         enableStricterValidation.set(true)
-    }
-
-    withType<Test> {
-        useJUnitPlatform()
-        testLogging {
-            events("passed", "skipped", "failed")
-        }
     }
 }

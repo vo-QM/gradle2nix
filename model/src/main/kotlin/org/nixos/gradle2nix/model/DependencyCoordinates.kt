@@ -20,11 +20,12 @@ interface DependencyCoordinates : Serializable {
      */
     val timestamp: String?
 
-    val id: String get() = if (timestamp != null) {
-        "$group:$artifact:$version:$timestamp"
-    } else {
-        "$group:$artifact:$version"
-    }
+    val id: String get() =
+        if (timestamp != null) {
+            "$group:$artifact:$version:$timestamp"
+        } else {
+            "$group:$artifact:$version"
+        }
 
     val timestampedCoordinates: DependencyCoordinates
 

@@ -5,32 +5,43 @@ import kotlin.system.exitProcess
 
 class Logger(
     val out: PrintStream = System.err,
-    val logLevel: LogLevel = LogLevel.warn,
+    val logLevel: LogLevel = LogLevel.WARN,
     val stacktrace: Boolean = false,
 ) {
-
-    fun debug(message: String, error: Throwable? = null) {
-        if (logLevel <= LogLevel.debug) {
+    fun debug(
+        message: String,
+        error: Throwable? = null,
+    ) {
+        if (logLevel <= LogLevel.DEBUG) {
             out.println("[DEBUG] $message")
             printError(error)
         }
     }
 
-    fun info(message: String, error: Throwable? = null) {
-        if (logLevel <= LogLevel.info) {
+    fun info(
+        message: String,
+        error: Throwable? = null,
+    ) {
+        if (logLevel <= LogLevel.INFO) {
             out.println("[INFO] $message")
             printError(error)
         }
     }
 
-    fun warn(message: String, error: Throwable? = null) {
-        if (logLevel <= LogLevel.warn) {
+    fun warn(
+        message: String,
+        error: Throwable? = null,
+    ) {
+        if (logLevel <= LogLevel.WARN) {
             out.println("[WARN] $message")
             printError(error)
         }
     }
 
-    fun error(message: String, error: Throwable? = null): Nothing {
+    fun error(
+        message: String,
+        error: Throwable? = null,
+    ): Nothing {
         out.println("[ERROR] $message")
         printError(error)
         exitProcess(1)
@@ -43,6 +54,8 @@ class Logger(
     }
 
     operator fun component1() = ::info
+
     operator fun component2() = ::warn
+
     operator fun component3() = ::error
 }

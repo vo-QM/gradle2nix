@@ -2,53 +2,91 @@
 
 package org.nixos.gradle2nix
 
-import javax.inject.Inject
 import org.gradle.api.Plugin
 import org.gradle.api.Project
+import org.gradle.api.internal.artifacts.ivyservice.ArtifactCachesProvider
+import org.gradle.api.internal.artifacts.ivyservice.modulecache.FileStoreAndIndexProvider
 import org.gradle.api.invocation.Gradle
+import org.gradle.internal.hash.ChecksumService
 import org.gradle.tooling.provider.model.ToolingModelBuilder
 import org.gradle.tooling.provider.model.ToolingModelBuilderRegistry
-import org.nixos.gradle2nix.dependencygraph.DependencyExtractor
-import org.nixos.gradle2nix.forceresolve.ForceDependencyResolutionPlugin
+import org.gradle.util.GradleVersion
 import org.nixos.gradle2nix.model.DependencySet
-import org.nixos.gradle2nix.util.artifactCachesProvider
-import org.nixos.gradle2nix.util.buildOperationListenerManager
-import org.nixos.gradle2nix.util.checksumService
-import org.nixos.gradle2nix.util.fileStoreAndIndexProvider
+import org.nixos.gradle2nix.model.RESOLVE_ALL_TASK
+import javax.inject.Inject
 
-abstract class Gradle2NixPlugin @Inject constructor(
-    private val toolingModelBuilderRegistry: ToolingModelBuilderRegistry
-): Plugin<Gradle> {
+abstract class Gradle2NixPlugin
+    @Inject
+    constructor(
+        private val toolingModelBuilderRegistry: ToolingModelBuilderRegistry,
+    ) : Plugin<Gradle> {
+        override fun apply(gradle: Gradle) {
+            val dependencyExtractor = DependencyExtractor()
 
-    override fun apply(gradle: Gradle) {
-        val dependencyExtractor = DependencyExtractor(
-            gradle.artifactCachesProvider,
-            gradle.checksumService,
-            gradle.fileStoreAndIndexProvider,
-        )
+            toolingModelBuilderRegistry.register(
+                DependencySetModelBuilder(
+                    dependencyExtractor,
+                    gradle.artifactCachesProvider,
+                    gradle.checksumService,
+                    gradle.fileStoreAndIndexProvider,
+                ),
+            )
 
-        toolingModelBuilderRegistry.register(DependencySetModelBuilder(dependencyExtractor))
+            if (GradleVersion.current() < GradleVersion.version("8.0")) {
+                val extractor = DependencyExtractor()
+                gradle.buildOperationListenerManager.addListener(extractor)
 
-        gradle.buildOperationListenerManager.addListener(dependencyExtractor)
+                @Suppress("DEPRECATION")
+                gradle.buildFinished {
+                    gradle.buildOperationListenerManager.removeListener(extractor)
+                }
+            } else {
+                val serviceProvider =
+                    gradle.sharedServices.registerIfAbsent(
+                        "nixDependencyExtractor",
+                        DependencyExtractorService::class.java,
+                    ).map { service ->
+                        service.apply { extractor = dependencyExtractor }
+                    }
 
-        // Configuration caching is not enabled with dependency verification so this is fine for now.
-        // Gradle 9.x might remove this though.
-        @Suppress("DEPRECATION")
-        gradle.buildFinished {
-            gradle.buildOperationListenerManager.removeListener(dependencyExtractor)
+                gradle.buildEventListenerRegistryInternal.onOperationCompletion(serviceProvider)
+            }
+
+            gradle.projectsEvaluated {
+                val resolveAll = gradle.rootProject.tasks.register(RESOLVE_ALL_TASK)
+
+                // Depend on "dependencies" task in all projects
+                gradle.allprojects { project ->
+                    val resolveProject = project.createResolveTask()
+                    resolveAll.configure { it.dependsOn(resolveProject) }
+                }
+
+                // Depend on all 'resolveBuildDependencies' task in each included build
+                gradle.includedBuilds.forEach { includedBuild ->
+                    resolveAll.configure {
+                        it.dependsOn(includedBuild.task(":$RESOLVE_ALL_TASK"))
+                    }
+                }
+            }
         }
-
-        gradle.pluginManager.apply(ForceDependencyResolutionPlugin::class.java)
     }
-}
 
 internal class DependencySetModelBuilder(
     private val dependencyExtractor: DependencyExtractor,
+    private val artifactCachesProvider: ArtifactCachesProvider,
+    private val checksumService: ChecksumService,
+    private val fileStoreAndIndexProvider: FileStoreAndIndexProvider,
 ) : ToolingModelBuilder {
-
     override fun canBuild(modelName: String): Boolean = modelName == DependencySet::class.qualifiedName
 
-    override fun buildAll(modelName: String, project: Project): DependencySet {
-        return dependencyExtractor.buildDependencySet()
+    override fun buildAll(
+        modelName: String,
+        project: Project,
+    ): DependencySet {
+        return dependencyExtractor.buildDependencySet(
+            artifactCachesProvider,
+            checksumService,
+            fileStoreAndIndexProvider,
+        )
     }
 }

@@ -1,7 +1,7 @@
 [versions]
 gradle = "8.7"
 junit = "5.8.2"
-kotlin = "1.9.22"
+kotlin = "1.9.24"
 ktor = "2.3.11"
 kotest = "5.9.0"
 
@@ -16,7 +16,7 @@ ktor-server-netty = { module = "io.ktor:ktor-server-netty", version.ref = "ktor"
 okio = "com.squareup.okio:okio:3.9.0"
 serialization-json = "org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3"
 slf4j-simple = "org.slf4j:slf4j-simple:1.7.36"
-xmlutil = "io.github.pdvrieze.xmlutil:serialization-jvm:+"
+xmlutil = "io.github.pdvrieze.xmlutil:serialization-jvm:0.90.0-RC1"
 
 [plugins]
 pluginPublish = { id = "com.gradle.plugin-publish", version = "1.2.1" }

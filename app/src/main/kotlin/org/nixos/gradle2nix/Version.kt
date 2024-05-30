@@ -3,95 +3,105 @@ package org.nixos.gradle2nix
 import java.util.concurrent.ConcurrentHashMap
 
 class Version(val source: String, val parts: List<String>, base: Version?) : Comparable<Version> {
-
     private val base: Version
     val numericParts: List<Long?>
 
     init {
         this.base = base ?: this
-        this.numericParts = parts.map {
-            try { it.toLong() } catch (e: NumberFormatException) { null }
-        }
+        this.numericParts =
+            parts.map {
+                try {
+                    it.toLong()
+                } catch (e: NumberFormatException) {
+                    null
+                }
+            }
     }
 
     override fun compareTo(other: Version): Int = compare(this, other)
 
     override fun toString(): String = source
 
-    override fun equals(other: Any?): Boolean = when {
-        other === this -> true
-        other == null || other !is Version -> false
-        else -> source == other.source
-    }
+    override fun equals(other: Any?): Boolean =
+        when {
+            other === this -> true
+            other == null || other !is Version -> false
+            else -> source == other.source
+        }
 
     override fun hashCode(): Int = source.hashCode()
 
     companion object {
-        private val SPECIAL_MEANINGS: Map<String, Int> = mapOf(
-            "dev" to -1,
-            "rc" to 1,
-            "snapshot" to 2,
-            "final" to 3,
-            "ga" to 4,
-            "release" to 5,
-            "sp" to 6
-        )
+        private val SPECIAL_MEANINGS: Map<String, Int> =
+            mapOf(
+                "dev" to -1,
+                "rc" to 1,
+                "snapshot" to 2,
+                "final" to 3,
+                "ga" to 4,
+                "release" to 5,
+                "sp" to 6,
+            )
 
         private val cache = ConcurrentHashMap<String, Version>()
 
         // From org.gradle.api.internal.artifacts.ivyservice.ivyresolve.strategy.VersionParser
-        operator fun invoke(original: String): Version = cache.getOrPut(original) {
-            val parts = mutableListOf<String>()
-            var digit = false
-            var startPart = 0
-            var pos = 0
-            var endBase = 0
-            var endBaseStr = 0
-            while (pos < original.length) {
-                val ch = original[pos]
-                if (ch == '.' || ch == '_' || ch == '-' || ch == '+') {
-                    parts.add(original.substring(startPart, pos))
-                    startPart = pos + 1
-                    digit = false
-                    if (ch != '.' && endBaseStr == 0) {
-                        endBase = parts.size
-                        endBaseStr = pos
-                    }
-                } else if (ch in '0'..'9') {
-                    if (!digit && pos > startPart) {
-                        if (endBaseStr == 0) {
-                            endBase = parts.size + 1
+        operator fun invoke(original: String): Version =
+            cache.getOrPut(original) {
+                val parts = mutableListOf<String>()
+                var digit = false
+                var startPart = 0
+                var pos = 0
+                var endBase = 0
+                var endBaseStr = 0
+                while (pos < original.length) {
+                    val ch = original[pos]
+                    if (ch == '.' || ch == '_' || ch == '-' || ch == '+') {
+                        parts.add(original.substring(startPart, pos))
+                        startPart = pos + 1
+                        digit = false
+                        if (ch != '.' && endBaseStr == 0) {
+                            endBase = parts.size
                             endBaseStr = pos
                         }
-                        parts.add(original.substring(startPart, pos))
-                        startPart = pos
-                    }
-                    digit = true
-                } else {
-                    if (digit) {
-                        if (endBaseStr == 0) {
-                            endBase = parts.size + 1
-                            endBaseStr = pos
+                    } else if (ch in '0'..'9') {
+                        if (!digit && pos > startPart) {
+                            if (endBaseStr == 0) {
+                                endBase = parts.size + 1
+                                endBaseStr = pos
+                            }
+                            parts.add(original.substring(startPart, pos))
+                            startPart = pos
                         }
-                        parts.add(original.substring(startPart, pos))
-                        startPart = pos
+                        digit = true
+                    } else {
+                        if (digit) {
+                            if (endBaseStr == 0) {
+                                endBase = parts.size + 1
+                                endBaseStr = pos
+                            }
+                            parts.add(original.substring(startPart, pos))
+                            startPart = pos
+                        }
+                        digit = false
                     }
-                    digit = false
+                    pos++
                 }
-                pos++
+                if (pos > startPart) {
+                    parts.add(original.substring(startPart, pos))
+                }
+                var base: Version? = null
+                if (endBaseStr > 0) {
+                    base = Version(original.substring(0, endBaseStr), parts.subList(0, endBase), null)
+                }
+                Version(original, parts, base)
             }
-            if (pos > startPart) {
-                parts.add(original.substring(startPart, pos))
-            }
-            var base: Version? = null
-            if (endBaseStr > 0) {
-                base = Version(original.substring(0, endBaseStr), parts.subList(0, endBase), null)
-            }
-            Version(original, parts, base)
-        }
 
         // From org.gradle.api.internal.artifacts.ivyservice.ivyresolve.strategy.StaticVersionComparator
-        private fun compare(version1: Version, version2: Version): Int {
+        private fun compare(
+            version1: Version,
+            version2: Version,
+        ): Int {
             if (version1 == version2) {
                 return 0
             }

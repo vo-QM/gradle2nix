@@ -21,11 +21,6 @@ import io.ktor.server.http.content.staticFiles
 import io.ktor.server.netty.Netty
 import io.ktor.server.netty.NettyApplicationEngine
 import io.ktor.server.routing.routing
-import java.io.File
-import java.io.FileFilter
-import java.nio.file.Files
-import java.nio.file.Paths
-import kotlin.random.Random
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -35,17 +30,22 @@ import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.decodeFromStream
 import kotlinx.serialization.json.encodeToStream
-import okio.use
+import java.io.File
+import java.io.FileFilter
+import java.nio.file.Files
+import java.nio.file.Paths
+import kotlin.random.Random
 
 private val app = Gradle2Nix()
 
 @OptIn(ExperimentalSerializationApi::class)
-private val json = Json {
-    prettyPrint = true
-    prettyPrintIndent = "  "
-}
+private val json =
+    Json {
+        prettyPrint = true
+        prettyPrintIndent = "  "
+    }
 
-val testLogger = Logger(logLevel = LogLevel.debug, stacktrace = true)
+val testLogger = Logger(logLevel = LogLevel.DEBUG, stacktrace = true)
 
 fun fixture(path: String): File {
     return Paths.get("../fixtures", path).toFile()
@@ -55,17 +55,19 @@ fun fixture(path: String): File {
 suspend fun TestScope.fixture(
     project: String,
     vararg args: String,
-    test: suspend TestScope.(File, Env) -> Unit
+    test: suspend TestScope.(File, Env) -> Unit,
 ) {
     val tmp = Paths.get("build/tmp/gradle2nix").apply { toFile().mkdirs() }
     val baseDir = Paths.get("../fixtures/projects", project).toFile()
-    val children = baseDir.listFiles(FileFilter { it.isDirectory && (it.name == "groovy" || it.name == "kotlin") })
-        ?.toList()
-    val cases = if (children.isNullOrEmpty()) {
-        listOf(project to baseDir)
-    } else {
-        children.map { "$project.${it.name}" to it }
-    }
+    val children =
+        baseDir.listFiles(FileFilter { it.isDirectory && (it.name == "groovy" || it.name == "kotlin") })
+            ?.toList()
+    val cases =
+        if (children.isNullOrEmpty()) {
+            listOf(project to baseDir)
+        } else {
+            children.map { "$project.${it.name}" to it }
+        }
     for (case in cases) {
         registerTestCase(
             NestedTest(
@@ -73,7 +75,7 @@ suspend fun TestScope.fixture(
                 disabled = false,
                 config = null,
                 type = TestType.Dynamic,
-                source = sourceRef()
+                source = sourceRef(),
             ) {
                 var dirName = case.second.toString().replace("/", ".")
                 while (dirName.startsWith(".")) dirName = dirName.removePrefix(".")
@@ -88,22 +90,25 @@ suspend fun TestScope.fixture(
                 }
                 app.main(
                     listOf(
-                        "-p", tempDir.toString(),
-                        "--log", "debug",
+                        "-p",
+                        tempDir.toString(),
+                        "--log",
+                        "debug",
                         "--stacktrace",
                         "--dump-events",
                         "--",
                         "-Dorg.nixos.gradle2nix.m2=$m2",
-                        "--info"
-                    ) + args
+                        "--info",
+                    ) + args,
                 )
                 val file = tempDir.resolve(app.lockFile)
                 file.shouldBeAFile()
-                val env: Env = file.inputStream().buffered().use { input ->
-                    Json.decodeFromStream(input)
-                }
+                val env: Env =
+                    file.inputStream().buffered().use { input ->
+                        Json.decodeFromStream(input)
+                    }
                 test(tempDir, env)
-            }
+            },
         )
     }
 }
@@ -127,11 +132,12 @@ suspend fun TestScope.golden(
             if (!goldenFile.exists()) {
                 fail("Golden file '$filename' doesn't exist. Run with --update-golden to generate.")
             }
-            val goldenData = try {
-                goldenFile.readText()
-            } catch (e: SerializationException) {
-                fail("Failed to load golden data from '$filename'. Run with --update-golden to regenerate.")
-            }
+            val goldenData =
+                try {
+                    goldenFile.readText()
+                } catch (e: SerializationException) {
+                    fail("Failed to load golden data from '$filename'. Run with --update-golden to regenerate.")
+                }
             json.encodeToString(env) should beEqual(goldenData)
         }
     }
@@ -172,24 +178,25 @@ object MavenRepo : MountableExtension<MavenRepo.Config, NettyApplicationEngine>,
     private fun tryStart(attempts: Int): NettyApplicationEngine {
         return try {
             val p = config.port ?: Random.nextInt(10000, 65000)
-            val s = embeddedServer(Netty, port = p, host = config.host) {
-                routing {
-                    staticFiles(
-                        remotePath = config.path,
-                        dir = config.repository,
-                        index = null,
-                    ) {
-                        enableAutoHeadResponse()
-                        contentType { path ->
-                            when (path.extension) {
-                                "pom", "xml" -> ContentType.Text.Xml
-                                "jar" -> ContentType("application", "java-archive")
-                                else -> ContentType.Text.Plain
+            val s =
+                embeddedServer(Netty, port = p, host = config.host) {
+                    routing {
+                        staticFiles(
+                            remotePath = config.path,
+                            dir = config.repository,
+                            index = null,
+                        ) {
+                            enableAutoHeadResponse()
+                            contentType { path ->
+                                when (path.extension) {
+                                    "pom", "xml" -> ContentType.Text.Xml
+                                    "jar" -> ContentType("application", "java-archive")
+                                    else -> ContentType.Text.Plain
+                                }
                             }
                         }
                     }
                 }
-            }
             coroutineScope.launch { s.start(wait = true) }
             s
         } catch (e: Throwable) {
