@@ -224,4 +224,4 @@ for examples of testing with these fixtures.
 
 ** License
 
-=gradle2nix= is licensed under the [[./COPYING][MIT License]].
+=gradle2nix= is licensed under the [[./COPYING][Apache License 2.0]].
