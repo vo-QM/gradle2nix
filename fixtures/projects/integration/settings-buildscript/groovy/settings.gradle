@@ -10,5 +10,3 @@ buildscript {
 }
 
 rootProject.name = "settings-buildscript"
-
-//apply plugin: 'net.vivin.gradle-semantic-build-versioning'
