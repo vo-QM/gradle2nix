@@ -128,7 +128,6 @@ let
 
   inherit (lib)
     mapAttrsToList
-    optionalString
     readFile
     versionAtLeast
     versionOlder
@@ -167,9 +166,6 @@ let
     https = fetchurl;
   } // fetchers;
 
-  # Fetch urls using the scheme for the first entry only; there isn't a
-  # straightforward way to tell Nix to try multiple fetchers in turn
-  # and short-circuit on the first successful fetch.
   fetch =
     name:
     { url, hash }:
@@ -304,41 +300,45 @@ let
 
       dontStrip = true;
 
-      nativeBuildInputs = [
-        finalAttrs.gradle
-      ] ++ lib.optional (finalAttrs.buildJdk != null) finalAttrs.buildJdk;
+      nativeBuildInputs = [ finalAttrs.gradle ];
 
-      buildPhase = ''
-        runHook preBuild
+      buildPhase =
+        let
+          finalGradleFlags =
+            [
+              "--console=plain"
+              "--no-build-cache"
+              "--no-configuration-cache"
+              "--no-daemon"
+              "--no-watch-fs"
+              "--offline"
+            ]
+            ++ lib.optional (finalAttrs.buildJdk != null) "-Dorg.gradle.java.home=${finalAttrs.buildJdk.home}"
+            ++ lib.optional finalAttrs.enableDebug "-Dorg.gradle.debug=true"
+            ++ lib.optional finalAttrs.enableParallelBuilding "--parallel"
+            ++ lib.optional (versionAtLeast finalAttrs.gradle.version "8.0") "--init-script=${initScript}"
+            ++ finalAttrs.gradleFlags;
+        in
+        ''
+          runHook preBuild
 
-        (
-        set -eux
+          (
+          set -eux
 
-        export NIX_OFFLINE_REPO='${offlineRepo}'
+          export NIX_OFFLINE_REPO='${offlineRepo}'
+          export GRADLE_USER_HOME="$(mktemp -d)"
 
-        ${optionalString (versionOlder finalAttrs.gradle.version "8.0") ''
-          # Work around https://github.com/gradle/gradle/issues/1055
-          TMPHOME="$(mktemp -d)"
-          mkdir -p "$TMPHOME/init.d"
-          export GRADLE_USER_HOME="$TMPHOME"
-          cp ${initScript} $TMPHOME/
-        ''}
+          ${lib.optionalString (versionOlder finalAttrs.gradle.version "8.0") ''
+            # Work around https://github.com/gradle/gradle/issues/1055
+            mkdir -p "$GRADLE_USER_HOME/init.d"
+            ln -s ${initScript} "$GRADLE_USER_HOME/init.d/nix-init.gradle"
+          ''}
 
-        gradle --offline --no-daemon --no-build-cache --no-watch-fs \
-          --info --full-stacktrace --warning-mode=all \
-          --no-configuration-cache --console=plain \
-          -Dmaven.repo.local=${offlineRepo} \
-          ${optionalString finalAttrs.enableParallelBuilding "--parallel"} \
-          ${optionalString finalAttrs.enableDebug "-Dorg.gradle.debug=true"} \
-          ${
-            optionalString (finalAttrs.buildJdk != null) "-Dorg.gradle.java.home=${finalAttrs.buildJdk.home}"
-          } \
-          --init-script ${initScript} \
-          ${concatStringsSep " " finalAttrs.gradleFlags}
-        )
+          gradle ${builtins.toString finalGradleFlags}
+          )
 
-        runHook postBuild
-      '';
+          runHook postBuild
+        '';
 
       passthru = {
         inherit offlineRepo;
