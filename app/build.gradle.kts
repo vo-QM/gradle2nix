@@ -1,3 +1,5 @@
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+
 plugins {
     id("org.jetbrains.kotlin.jvm")
     id("org.jetbrains.kotlin.plugin.serialization")
@@ -36,6 +38,18 @@ application {
         .from(configurations.named("share"))
         .into("share")
         .rename("plugin.*\\.jar", "plugin.jar")
+}
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_1_8
+    targetCompatibility = JavaVersion.VERSION_1_8
+}
+
+kotlin {
+    compilerOptions {
+        jvmTarget.set(JvmTarget.JVM_1_8)
+        optIn.add("kotlin.RequiresOptIn")
+    }
 }
 
 sourceSets {
