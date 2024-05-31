@@ -15,6 +15,7 @@ import org.nixos.gradle2nix.model.DependencySet
 import org.nixos.gradle2nix.model.RESOLVE_ALL_TASK
 import javax.inject.Inject
 
+@Suppress("UNUSED")
 abstract class Gradle2NixPlugin
     @Inject
     constructor(
@@ -45,7 +46,7 @@ abstract class Gradle2NixPlugin
                     gradle.sharedServices.registerIfAbsent(
                         "nixDependencyExtractor",
                         DependencyExtractorService::class.java,
-                    ).map { service ->
+                    ) {}.map { service ->
                         service.apply { extractor = dependencyExtractor }
                     }
 
