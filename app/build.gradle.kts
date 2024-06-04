@@ -12,13 +12,14 @@ dependencies {
     implementation(project(":model"))
     implementation(libs.clikt)
     implementation(libs.gradle.toolingApi)
+    implementation(libs.kotlin.stdlib)
     implementation(libs.kotlinx.coroutines.core)
     implementation(libs.serialization.json)
     runtimeOnly(libs.slf4j.simple)
 
-    "share"(project(":plugin", configuration = "shadow")) {
-        isTransitive = false
-    }
+    "share"(project(":plugin:base", configuration = "shadow"))
+    "share"(project(":plugin:gradle80", configuration = "shadow"))
+    "share"(project(":plugin:gradle81", configuration = "shadow"))
 
     testImplementation(libs.kotest.assertions)
     testImplementation(libs.kotest.runner)
@@ -37,7 +38,6 @@ application {
     applicationDistribution
         .from(configurations.named("share"))
         .into("share")
-        .rename("plugin.*\\.jar", "plugin.jar")
 }
 
 java {

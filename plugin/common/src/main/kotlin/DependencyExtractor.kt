@@ -7,10 +7,8 @@ import kotlinx.serialization.json.decodeFromStream
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
-import org.gradle.api.internal.artifacts.ivyservice.ArtifactCachesProvider
 import org.gradle.api.internal.artifacts.ivyservice.modulecache.FileStoreAndIndexProvider
-import org.gradle.api.services.BuildService
-import org.gradle.api.services.BuildServiceParameters
+import org.gradle.api.invocation.Gradle
 import org.gradle.internal.hash.ChecksumService
 import org.gradle.internal.operations.BuildOperationDescriptor
 import org.gradle.internal.operations.BuildOperationListener
@@ -29,30 +27,11 @@ import org.nixos.gradle2nix.model.impl.DefaultResolvedDependency
 import java.io.File
 import java.util.concurrent.ConcurrentHashMap
 
-internal abstract class DependencyExtractorService :
-    BuildService<BuildServiceParameters.None>, BuildOperationListener, AutoCloseable {
-    var extractor: DependencyExtractor? = null
-
-    override fun started(
-        buildOperation: BuildOperationDescriptor,
-        startEvent: OperationStartEvent,
-    ) {}
-
-    override fun progress(
-        operationIdentifier: OperationIdentifier,
-        progressEvent: OperationProgressEvent,
-    ) {}
-
-    override fun finished(
-        buildOperation: BuildOperationDescriptor,
-        finishEvent: OperationFinishEvent,
-    ) {
-        extractor?.finished(buildOperation, finishEvent)
-    }
-
-    override fun close() {
-        extractor = null
-    }
+interface DependencyExtractorApplier {
+    fun apply(
+        gradle: Gradle,
+        extractor: DependencyExtractor,
+    )
 }
 
 class DependencyExtractor : BuildOperationListener {
@@ -80,14 +59,14 @@ class DependencyExtractor : BuildOperationListener {
     }
 
     fun buildDependencySet(
-        artifactCachesProvider: ArtifactCachesProvider,
+        cacheAccess: GradleCacheAccess,
         checksumService: ChecksumService,
         fileStoreAndIndexProvider: FileStoreAndIndexProvider,
     ): DependencySet {
         val files = mutableMapOf<DependencyCoordinates, MutableMap<File, String>>()
         val mappings = mutableMapOf<DependencyCoordinates, Map<String, String>>()
 
-        artifactCachesProvider.writableCacheAccessCoordinator.useCache {
+        cacheAccess.useCache {
             for ((url, _) in urls) {
                 fileStoreAndIndexProvider.externalResourceIndex.lookup(url)?.let { cached ->
                     cached.cachedFile?.let { file ->
@@ -131,6 +110,8 @@ class DependencyExtractor : BuildOperationListener {
     }
 }
 
+private fun <T> buildList(block: MutableList<T>.() -> Unit): List<T> = mutableListOf<T>().apply(block).toList()
+
 private fun cachedComponentId(file: File): DependencyCoordinates? {
     val parts = file.invariantSeparatorsPath.split('/')
     if (parts.size < 6) return null
@@ -148,7 +129,7 @@ private fun parseFileMappings(file: File): Map<String, String>? =
             ?.mapNotNull {
                 val name = it["name"]?.jsonPrimitive?.content ?: return@mapNotNull null
                 val url = it["url"]?.jsonPrimitive?.content ?: return@mapNotNull null
-                name to url
+                if (name != url) name to url else null
             }
             ?.toMap()
             ?.takeUnless { it.isEmpty() }

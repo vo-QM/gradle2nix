@@ -6,7 +6,7 @@ plugins {
 }
 
 dependencies {
-    compileOnly(libs.kotlin.stdlib)
+    compileOnly(kotlin("stdlib"))
 }
 
 java {
@@ -20,6 +20,7 @@ kotlin.compilerOptions {
     @Suppress("DEPRECATION") // we can't use language version greater than 1.5 as minimal supported Gradle embeds Kotlin 1.4
     languageVersion.set(KotlinVersion.KOTLIN_1_5)
     jvmTarget.set(JvmTarget.JVM_1_8)
+    optIn.add("kotlin.RequiresOptIn")
     freeCompilerArgs.addAll(
         listOf(
             "-Xskip-prerelease-check",

@@ -1,9 +1,6 @@
 plugins {
     base
-    alias(libs.plugins.kotlin.jvm) apply false
     alias(libs.plugins.kotlin.serialization) apply false
-    alias(libs.plugins.pluginPublish) apply false
-    alias(libs.plugins.shadow) apply false
 }
 
 group = "org.nixos.gradle2nix"
