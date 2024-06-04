@@ -22,6 +22,7 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.encodeToStream
 import org.gradle.tooling.model.gradle.GradleBuild
 import org.nixos.gradle2nix.model.DependencySet
+import org.nixos.gradle2nix.model.RESOLVE_ALL_TASK
 import java.io.File
 import java.net.URI
 
@@ -71,7 +72,7 @@ class Gradle2Nix : CliktCommand(
         "-t",
         metavar = "TASK",
         help = "Gradle tasks to run",
-    ).multiple()
+    ).multiple(default = listOf(RESOLVE_ALL_TASK))
 
     private val projectDir: File by option(
         "--project",
@@ -198,12 +199,12 @@ class Gradle2Nix : CliktCommand(
         val dependencySets = mutableListOf<DependencySet>()
 
         connect(config).use { connection ->
-            dependencySets.add(runBlocking { connection.build(config) })
+            dependencySets.add(runBlocking { connection.build(config, config.tasks) })
         }
 
         for (buildSrc in buildSrcs) {
             connect(config, buildSrc).use { connection ->
-                dependencySets.add(runBlocking { connection.build(config) })
+                dependencySets.add(runBlocking { connection.build(config, listOf(RESOLVE_ALL_TASK)) })
             }
         }
 

@@ -7,7 +7,6 @@ import org.gradle.tooling.ProjectConnection
 import org.gradle.tooling.ResultHandler
 import org.gradle.tooling.model.gradle.GradleBuild
 import org.nixos.gradle2nix.model.DependencySet
-import org.nixos.gradle2nix.model.RESOLVE_ALL_TASK
 import java.io.File
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
@@ -50,7 +49,10 @@ suspend fun ProjectConnection.buildModel(): GradleBuild =
             )
     }
 
-suspend fun ProjectConnection.build(config: Config): DependencySet =
+suspend fun ProjectConnection.build(
+    config: Config,
+    tasks: List<String>,
+): DependencySet =
     suspendCancellableCoroutine { continuation ->
         val cancellationTokenSource = GradleConnector.newCancellationTokenSource()
 
@@ -58,13 +60,7 @@ suspend fun ProjectConnection.build(config: Config): DependencySet =
 
         action { controller -> controller.getModel(DependencySet::class.java) }
             .withCancellationToken(cancellationTokenSource.token())
-            .apply {
-                if (config.tasks.isNotEmpty()) {
-                    forTasks(*config.tasks.toTypedArray())
-                } else {
-                    forTasks(RESOLVE_ALL_TASK)
-                }
-            }
+            .forTasks(*tasks.toTypedArray())
             .setJavaHome(config.gradleJdk)
             .addArguments(config.gradleArgs)
             .addArguments(
