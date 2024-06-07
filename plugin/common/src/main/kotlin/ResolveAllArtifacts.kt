@@ -44,6 +44,7 @@ abstract class ResolveProjectDependenciesTask : DefaultTask() {
 
     protected fun Configuration.artifactFiles(): FileCollection {
         return incoming.artifactView { viewConfiguration ->
+            viewConfiguration.isLenient = true
             viewConfiguration.componentFilter { it is ModuleComponentIdentifier }
         }.files
     }
