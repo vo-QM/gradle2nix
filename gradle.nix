@@ -22,15 +22,9 @@
 {
   lib,
   stdenv,
-  buildEnv,
-  fetchs3,
-  fetchurl,
   gradle,
-  maven,
-  runCommandLocal,
-  symlinkJoin,
+  buildMavenRepo,
   writeText,
-  writeTextDir,
 }:
 
 let
@@ -112,129 +106,18 @@ in
 }@args:
 
 let
-  inherit (builtins)
-    attrValues
-    concatStringsSep
-    elemAt
-    filter
-    fromJSON
-    getAttr
-    head
-    length
-    mapAttrs
-    removeAttrs
-    replaceStrings
-    ;
+  inherit (builtins) removeAttrs;
 
-  inherit (lib)
-    mapAttrsToList
-    readFile
-    versionAtLeast
-    versionOlder
-    ;
+  inherit (lib) versionAtLeast versionOlder;
 
-  inherit (lib.strings) sanitizeDerivationName;
-
-  toCoordinates =
-    id:
-    let
-      coords = builtins.split ":" id;
-
-      parseVersion =
-        version:
-        let
-          parts = builtins.split ":" version;
-          base = elemAt parts 0;
-        in
-        if length parts >= 2 then
-          let
-            snapshot = elemAt parts 2;
-          in
-          replaceStrings [ "-SNAPSHOT" ] [ "-${snapshot}" ] base
-        else
-          base;
-    in
-    rec {
-      group = elemAt coords 0;
-      module = elemAt coords 2;
-      version = elemAt coords 4;
-      uniqueVersion = parseVersion version;
-    };
-
-  fetchers' = {
-    http = fetchurl;
-    https = fetchurl;
-  } // fetchers;
-
-  fetch =
-    name:
-    { url, hash }:
-    let
-      scheme = head (builtins.match "([a-z0-9+.-]+)://.*" url);
-      fetch' = getAttr scheme fetchers';
-    in
-    fetch' { inherit url hash; };
-
-  mkModule =
-    id: artifacts:
-    let
-      coords = toCoordinates id;
-      modulePath = "${replaceStrings [ "." ] [ "/" ] coords.group}/${coords.module}/${coords.version}";
-    in
-    stdenv.mkDerivation {
-      pname = sanitizeDerivationName "${coords.group}-${coords.module}";
-      version = coords.uniqueVersion;
-
-      srcs = mapAttrsToList fetch artifacts;
-
-      dontPatch = true;
-      dontConfigure = true;
-      dontBuild = true;
-      dontFixup = true;
-      dontInstall = true;
-
-      preUnpack = ''
-        mkdir -p "$out/${modulePath}"
-      '';
-
-      unpackCmd = ''
-        cp "$curSrc" "$out/${modulePath}/$(stripHash "$curSrc")"
-      '';
-
-      sourceRoot = ".";
-
-      preferLocalBuild = true;
-      allowSubstitutes = false;
-    };
-
-  # Intermediate dependency spec.
-  #
-  # We want to allow overriding dependencies via the 'dependencies' function,
-  # so we pass an intermediate set that maps each Maven coordinate to the
-  # derivation created with 'mkModule'. This allows users extra flexibility
-  # to do things like patching native libraries with patchelf or replacing
-  # artifacts entirely.
-  lockedDependencies =
-    final:
-    if lockFile == null then
-      { }
-    else
-      let
-        lockedDependencySpecs = fromJSON (readFile lockFile);
-      in
-      mapAttrs mkModule lockedDependencySpecs;
-
-  finalDependencies =
-    let
-      composedExtension = lib.composeManyExtensions overlays;
-      extended = lib.extends composedExtension lockedDependencies;
-      fixed = lib.fix extended;
-    in
-    filter lib.isDerivation (attrValues fixed);
-
-  offlineRepo = symlinkJoin {
-    name = if version != null then "${pname}-${version}-gradle-repo" else "${pname}-gradle-repo";
-    paths = finalDependencies;
+  offlineRepo = buildMavenRepo {
+    inherit
+      lockFile
+      pname
+      version
+      fetchers
+      overlays
+      ;
   };
 
   initScript = writeText "init.gradle" ''

@@ -5,7 +5,9 @@
 with pkgs;
 
 let
-  buildGradlePackage = callPackage ./gradle.nix { };
+  buildMavenRepo = callPackage ./maven-repo.nix { };
+
+  buildGradlePackage = callPackage ./gradle.nix { inherit buildMavenRepo; };
 
   gradle2nix = buildGradlePackage {
     pname = "gradle2nix";
@@ -38,7 +40,7 @@ let
     '';
 
     passthru = {
-      inherit buildGradlePackage;
+      inherit buildGradlePackage buildMavenRepo;
     };
 
     meta = with lib; {

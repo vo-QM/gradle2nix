@@ -21,7 +21,8 @@
       in
       {
         builders = rec {
-          buildGradlePackage = pkgs.callPackage ./gradle.nix { };
+          buildMavenRepo = pkgs.callPackage ./maven-repo.nix { };
+          buildGradlePackage = pkgs.callPackage ./gradle.nix { inherit buildMavenRepo; };
           default = buildGradlePackage;
         };
 
