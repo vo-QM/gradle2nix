@@ -39,11 +39,21 @@ abstract class AbstractResolveAllArtifactsApplier : ResolveAllArtifactsApplier {
 abstract class ResolveProjectDependenciesTask : DefaultTask() {
     @Internal
     protected fun getReportableConfigurations(): List<Configuration> {
-        return project.configurations.filter { (it as? DeprecatableConfiguration)?.canSafelyBeResolved() ?: true }
+        return project.configurations
+            .filter { (it as? DeprecatableConfiguration)?.canSafelyBeResolved() ?: true }
+//            .onEach {
+//                it.apply {
+//                    try {
+//                        dependencyConstraints.addAll(project.buildscript.configurations.flatMap { it.allDependencyConstraints })
+//                    } catch (t: Throwable) {
+//                    }
+//                }
+//            }
     }
 
     protected fun Configuration.artifactFiles(): FileCollection {
         return incoming.artifactView { viewConfiguration ->
+            //dependencyConstraints.addAll(project.buildscript.configurations.flatMap { it.allDependencyConstraints })
             viewConfiguration.isLenient = true
             viewConfiguration.componentFilter { it is ModuleComponentIdentifier }
         }.files
