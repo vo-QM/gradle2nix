@@ -102,6 +102,9 @@ in
   #      "org.apache.log4j:core:2.23.1" = null;
   #    })
   overlays ? [ ],
+  # Build inputs which need to be added to the Gradle build.
+  # For example, in can be used to pass Android SDK for Android and Kotlin Multiplatform app builds.
+  extraBuildInputs ? [ ],
   ...
 }@args:
 
@@ -183,7 +186,7 @@ let
 
       dontStrip = true;
 
-      nativeBuildInputs = [ finalAttrs.gradle ];
+      nativeBuildInputs = [ finalAttrs.gradle ] ++ extraBuildInputs;
 
       buildPhase =
         let
@@ -195,6 +198,7 @@ let
               "--no-daemon"
               "--no-watch-fs"
               "--offline"
+              "-Duser.home=$(mktemp -d)"
             ]
             ++ lib.optional (finalAttrs.buildJdk != null) "-Dorg.gradle.java.home=${finalAttrs.buildJdk.home}"
             ++ lib.optional finalAttrs.enableDebug "-Dorg.gradle.debug=true"
